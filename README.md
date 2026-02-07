@@ -12,6 +12,7 @@ This project allows **users, recruiters, and admins** to register, post jobs, ap
 - View their profile
 - Apply for jobs
 - See list of their applications
+- Receive notifications when a recruiter posts a job
 
 ### Recruiter
 - Post jobs
@@ -22,6 +23,7 @@ This project allows **users, recruiters, and admins** to register, post jobs, ap
 - View all users
 - Deactivate users
 - Access protected admin routes
+- Activate users
 
 ### Common
 - JWT-based authentication

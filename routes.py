@@ -113,8 +113,9 @@ def recruiter_posts(recruiter: UsersDB = Depends(recruiter_required), p=Depends(
 
 
 @router.get('/admin/users', response_model = List[UserResponse])
-def get_users(admin: UsersDB = Depends(admin_required), db: Session= Depends(get_db)):
-    users = db.query(UsersDB).all()
+def get_users(admin: UsersDB = Depends(admin_required),p = Depends(pagination), db: Session= Depends(get_db)):
+    skip,limit = p
+    users = db.query(UsersDB).offset(skip).limit(limit).all()
     return users
 
 @router.patch('/admin/user/deactivate', response_model = UserResponse)
@@ -125,6 +126,22 @@ def deactivate_user(user_id:int,admin:UsersDB = Depends(admin_required), db:Sess
     user.is_active = False
     db.commit()
     manager.send_to_user(user.id, {"message":" your account has been deactivated by the admin"})
+    return user
+
+@router.patch('/admin/user/activate', response_model =UserResponse)
+def activate_user(user_id:int, admin:UsersDB = Depends(admin_required),db: Session = Depends(get_db)):
+    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+
+    if not user:
+        raise HTTPException( status_code =status.HTTP_404_NOT_FOUND, detail = "User not found")
+    
+    if user.is_active:
+        raise HTTPException( status_code = status.HTTP_400_BAD_REQUEST, detail="User is already active")
+
+    user.is_active = True
+    db.commit()
+    db.refresh(user)
+    manager.send_to_user(user.id, {"message":"Your account has been activated by the admin "})
     return user
     
 @router.get('/admin/user', response_model = UserResponse)
