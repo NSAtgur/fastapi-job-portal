@@ -36,8 +36,8 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
     access_token = create_access_token({"sub":user.email})
 
     return ({
-        "access token": access_token,
-        "type": "bearer"
+        "access_token": access_token,
+        "token_type": "bearer"
     })
 
 @router.post('/postjob', response_model=JobResponse)
@@ -68,7 +68,7 @@ def apply(job_id:int, user: UsersDB = Depends(login_required), db: Session = Dep
     jobs = db.query(JobsDB).filter(JobsDB.id == job_id).first()
     
     if not jobs:
-        raise HTTPException(status_code = status.HTTP_204_NO_CONTENT, detail = "Job not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "Job not found")
     
     existing_application = db.query( ApplicationsDB).filter(ApplicationsDB.user_id == user.id, ApplicationsDB.job_id== job_id).first()
     if existing_application:

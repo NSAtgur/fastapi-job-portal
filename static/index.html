@@ -613,7 +613,7 @@
       });
       if (!res.ok) { const j = await res.json(); throw new Error(j.detail); }
       const data = await res.json();
-      token = data['access token'];
+      token = data['access_token'];
       localStorage.setItem('hf_token', token);
       await fetchCurrentUser();
       updateNavAuth();
