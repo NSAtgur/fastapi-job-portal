@@ -20,6 +20,7 @@ class JobCreate(BaseModel):
         orm_mode = True
 
 class JobResponse(BaseModel):
+    id:int
     title:str
     company:str
     created_at:datetime
