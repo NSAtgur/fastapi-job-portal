@@ -30,8 +30,11 @@ def register_user(user: CreateUser, db: Session = Depends(get_db)):
 @router.post('/login')
 def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.email == form_data.username).first()
-    if not user or not verify_password_hash(form_data.password, user.password):
-        raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED, detail = "Invalid email or password")
+    if not user :
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "User not found")
+    
+    if not verify_password_hash(form_data.password, user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = " Incorrect Password")
     
     access_token = create_access_token({"sub":user.email})
 
@@ -153,6 +156,14 @@ def get_user(user_id:int, admin: UsersDB=Depends(admin_required), db:Session = D
     
     return user
 
+@router.get('/admin/promote-admin',response_model= UserResponse)
+def promote_user(user_id:int, admin: UsersDB= Depends(admin_required), db: Session = Depends(get_db)):
+    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+
+    if not user:
+        raise HTTPException( status_code = status.HTTP_404_NOT_FOUND, detail = " User not found")
+    
+    return user
 
 @router.websocket('/ws')
 async def websocket_Endpoint(websocket:WebSocket, db: Session = Depends(get_db)):

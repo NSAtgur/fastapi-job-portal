@@ -509,7 +509,7 @@
     <div class="dash-main">
       <!-- Notifications -->
       <div class="panel">
-        <div class="panel-title">⚡ Live Notifications</div>
+        <div class="panel-title"> Notifications</div>
         <div class="notif-list" id="admin-notifs">
           <div class="empty-state"><div class="icon">🔔</div><p>No notifications yet</p></div>
         </div>
@@ -878,15 +878,31 @@
             <td><span class="status-pill ${u.is_active ? 'active' : 'inactive'}">
               ${u.is_active ? '● Active' : '● Inactive'}</span></td>
             <td>
+              <button class="action-btn" onclick="viewUser(${u.id})">View</button>
+              
               ${u.is_active
                 ? `<button class="action-btn deactivate" onclick="toggleUser(${u.id}, 'deactivate')">Deactivate</button>`
                 : `<button class="action-btn activate" onclick="toggleUser(${u.id}, 'activate')">Activate</button>`}
+
+              ${u.role !== 'admin'
+                ? `<button class="action-btn activate" onclick="promoteAdmin(${u.id})">Promote</button>`
+              : ''}
             </td>
           </tr>`).join('')}
         </tbody></table>`;
       renderPagination('admin-users-pagination', adminUsersPage, users.length === PAGE_SIZE, (p) => { adminUsersPage = p; loadAdminUsers(); });
     } catch(e) { wrap.innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>${e.message}</p></div>`; }
   }
+
+  async function viewUser(userId) {
+    try {
+      const user = await api(`/admin/user?user_id=${userId}`);
+      alert(JSON.stringify(user, null, 2));
+      }  catch(e) {
+      toast(e.message, 'error');
+      }
+    }
+    
 
   async function toggleUser(userId, action) {
     try {
@@ -896,6 +912,19 @@
     } catch(e) { toast(e.message, 'error'); }
   }
 
+  async function promoteAdmin(userId) {
+    try {
+      await api(`/admin/promote_admin?user_id=${userId}`, {
+        method: 'PATCH'
+      });
+
+    toast('User promoted to admin', 'success');
+    loadAdminUsers();
+
+      }  catch (e) {
+        toast(e.message, 'error');
+      }
+    }
   // ──── PAGINATION ────
   function renderPagination(containerId, currentPage, hasNext, onChange) {
     const c = document.getElementById(containerId);
