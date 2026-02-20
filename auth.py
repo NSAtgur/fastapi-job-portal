@@ -32,4 +32,4 @@ def recruiter_required(user: UsersDB = Depends(login_required)):
 
 
 def pagination( skip:int = 0, limit:int = 10):
-    return {"skip":skip, "limit":limit}
+    return skip,limit
