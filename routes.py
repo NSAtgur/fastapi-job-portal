@@ -9,6 +9,7 @@ from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
 from ws_manager import ConnectionManager, manager
 from bgtasks import notify
+from sqlalchemy import or_
 
 router = APIRouter()
 
@@ -59,7 +60,7 @@ def post_job(job: JobCreate,background_tasks:BackgroundTasks, r: UsersDB = Depen
 def search_job(title:str, p = Depends(pagination), db: Session = Depends(get_db)):
     skip,limit = p
 
-    jobs = db.query(JobsDB).filter(JobsDB.title == title).offset(skip).limit(limit).all()
+    jobs = db.query(JobsDB).filter(or_(JobsDB.title.ilike(f"%{title}%"))).offset(skip).limit(limit).all()
 
     return jobs
 
