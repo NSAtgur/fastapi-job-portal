@@ -35,6 +35,9 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
     if not user :
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "User not found")
     
+    if not user.is_active:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail="User deactivated")
+    
     if not verify_password_hash(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = " Incorrect Password")
     

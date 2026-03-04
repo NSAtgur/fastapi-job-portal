@@ -15,7 +15,8 @@ def login_required(token:str = Depends(oauth2schemes),db: Session = Depends(get_
     user = db.query(UsersDB).filter(UsersDB.email == user_email).first()
     if not user:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = 'user not found')
-    
+    if not user.is_active:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail="User deactivated")
     return user
 
 
