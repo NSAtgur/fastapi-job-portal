@@ -80,7 +80,7 @@ def apply(job_id:int, background_tasks:BackgroundTasks, user: UsersDB = Depends(
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
-    background_tasks.add_task(notify, user.id, {"type":"applied", "user_id":user.id, "message":f"{user.id} has applied for your job"})
+    background_tasks.add_task(notify, jobs.created_by, {"type":"applied", "user_id":user.id, "message":f"{user.email} has applied for your job"})
     return new_application
 
 
