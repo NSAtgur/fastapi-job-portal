@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, UniqueConstraint, Boolean,JSON
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from dotenv import load_dotenv
 import os
@@ -20,9 +20,10 @@ class UsersDB(Base):
     password = Column(String)
     role = Column(String, default = "user", nullable = False)
     is_active = Column(Boolean, default = True)
+
     applications = relationship("ApplicationsDB", back_populates='user')
     jobs = relationship("JobsDB", back_populates ='creator')
-
+    notifications = relationship("NotificationsDB", back_populates="user")
 
 class JobsDB(Base):
 
@@ -51,6 +52,18 @@ class ApplicationsDB(Base):
     
     __table_args__= (UniqueConstraint("user_id","job_id", name ="unique_user_job"),)
     
+
+
+class NotificationsDB(Base):
+    __tablename__ = 'notifications'
+    id = Column(Integer, primary_key = True)
+    user_id = Column( Integer, ForeignKey("users.id"), index = True)
+    message = Column(JSON)
+    is_read = Column(Boolean, default = False)
+    created_at = Column(DateTime, default = datetime.utcnow())
+
+    user = relationship("UsersDB", back_populates="notifications")
+
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind = engine)

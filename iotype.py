@@ -1,23 +1,27 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from typing import Dict, Any
+
 class CreateUser(BaseModel):
     email:str
     password:str
     role:str
     
 class UserResponse(BaseModel):
+    id:int
     email:str
     role:str
+    is_active:bool
 
     class Config:
-        orm_mode = True
+            model_config = ConfigDict(from_attributes=True)
 
 class JobCreate(BaseModel):
     title:str
     company:str
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 class JobResponse(BaseModel):
     id:int
@@ -26,14 +30,14 @@ class JobResponse(BaseModel):
     created_at:datetime
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 class JobApply(BaseModel):
     pass
    
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
 
 class ApplicationResponse(BaseModel):
@@ -42,4 +46,12 @@ class ApplicationResponse(BaseModel):
     status:str
     applied_at:datetime
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
+
+class NotificationResponse(BaseModel):
+    id:int
+    message:Dict[str,Any]
+    created_at:datetime
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)

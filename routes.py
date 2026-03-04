@@ -1,13 +1,14 @@
-from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect
-from database import UsersDB,ApplicationsDB, JobsDB, get_db
+from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks
+from database import UsersDB,ApplicationsDB, JobsDB,NotificationsDB, get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from iotype import CreateUser, UserResponse, JobCreate, JobResponse, JobApply, ApplicationResponse
+from iotype import CreateUser, UserResponse, JobCreate, JobResponse, JobApply, ApplicationResponse, NotificationResponse
 from sqlalchemy.orm import Session
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
 from ws_manager import ConnectionManager, manager
+from bgtasks import notify
 
 router = APIRouter()
 
@@ -37,22 +38,20 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = " Incorrect Password")
     
     access_token = create_access_token({"sub":user.email})
-
     return ({
         "access_token": access_token,
         "token_type": "bearer"
     })
 
 @router.post('/postjob', response_model=JobResponse)
-def post_job(job: JobCreate, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
+def post_job(job: JobCreate,background_tasks:BackgroundTasks, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
     new_job = JobsDB(title= job.title, company = job.company, created_by = r.id)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
     users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
     for user in users:
-        
-        manager.send_to_user(user.id, {"type":"job posted", "job_id":new_job.id, "details":f"{new_job.title} at {new_job.company}"})
+        background_tasks.add_task(notify,user.id,{"type":"job posted", "job_id":new_job.id, "details":f"{new_job.title} at {new_job.company}"})
     return new_job
 
 
@@ -66,7 +65,7 @@ def search_job(title:str, p = Depends(pagination), db: Session = Depends(get_db)
 
 
 @router.post('/apply/{job_id}', response_model = ApplicationResponse)
-def apply(job_id:int, user: UsersDB = Depends(login_required), db: Session = Depends(get_db)):
+def apply(job_id:int, background_tasks:BackgroundTasks, user: UsersDB = Depends(login_required), db: Session = Depends(get_db)):
 
     jobs = db.query(JobsDB).filter(JobsDB.id == job_id).first()
     
@@ -81,7 +80,7 @@ def apply(job_id:int, user: UsersDB = Depends(login_required), db: Session = Dep
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
-    manager.send_to_user(jobs.created_by, {"type":"applied", "user_id":user.id, "message":f"{user.id} has applied for your job"})
+    background_tasks.add_task(notify, user.id, {"type":"applied", "user_id":user.id, "message":f"{user.id} has applied for your job"})
     return new_application
 
 
@@ -122,17 +121,17 @@ def get_users(admin: UsersDB = Depends(admin_required),p = Depends(pagination), 
     return users
 
 @router.patch('/admin/user/deactivate', response_model = UserResponse)
-def deactivate_user(user_id:int,admin:UsersDB = Depends(admin_required), db:Session = Depends(get_db)):
+def deactivate_user(user_id:int,background_tasks:BackgroundTasks,admin:UsersDB = Depends(admin_required), db:Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail = " user not found")
     user.is_active = False
     db.commit()
-    manager.send_to_user(user.id, {"message":" your account has been deactivated by the admin"})
+    background_tasks.add_task(notify, user_id, {"message":" your account has been deactivated by the admin"})
     return user
 
 @router.patch('/admin/user/activate', response_model =UserResponse)
-def activate_user(user_id:int, admin:UsersDB = Depends(admin_required),db: Session = Depends(get_db)):
+def activate_user(user_id:int,background_tasks:BackgroundTasks,  admin:UsersDB = Depends(admin_required),db: Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
 
     if not user:
@@ -144,7 +143,7 @@ def activate_user(user_id:int, admin:UsersDB = Depends(admin_required),db: Sessi
     user.is_active = True
     db.commit()
     db.refresh(user)
-    manager.send_to_user(user.id, {"message":"Your account has been activated by the admin "})
+    background_tasks.add_task(notify,user_id,{"message":"Your account has been activated by the admin "})
     return user
     
 @router.get('/admin/user', response_model = UserResponse)
@@ -164,6 +163,13 @@ def promote_user(user_id:int, admin: UsersDB= Depends(admin_required), db: Sessi
         raise HTTPException( status_code = status.HTTP_404_NOT_FOUND, detail = " User not found")
     
     return user
+
+@router.get('/profile/notifications', response_model = List[NotificationResponse])
+def notifications(user = Depends(login_required),p=Depends(pagination),  db:Session = Depends(get_db)):
+    skip,limit = p
+    notifications = db.query(NotificationsDB).filter(NotificationsDB.user_id == user.id).offset(skip).limit(limit).all()
+    return notifications
+
 
 @router.websocket('/ws')
 async def websocket_Endpoint(websocket:WebSocket, db: Session = Depends(get_db)):
