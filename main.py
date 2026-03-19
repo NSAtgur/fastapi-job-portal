@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from routes import router
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-
+from fastapi.middleware.cors import  CORSMiddleware
 app = FastAPI()
-
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/")
-def serve_frontend():
-    return FileResponse("static/index.html")
+origins = ["https://fastapi-job-portal.vercel.app"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # allow frontend requests
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(router)
