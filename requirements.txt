@@ -5,3 +5,6 @@ python-dotenv==1.0.1
 passlib[argon2]==1.7.4
 python-jose==3.3.0
 psycopg2-binary==2.9.9
+pillow==12.1.1
+cloudinary==1.44.1
+alembic==1.18.4
