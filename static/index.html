@@ -3,263 +3,447 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>NexWork</title>
-<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<title>Talentflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg: #f7f5f0;
-  --card: #ffffff;
-  --border: #e2ddd6;
-  --ink: #18150f;
-  --ink2: #5a5248;
-  --ink3: #9a9088;
-  --accent: #c94f1a;
-  --radius: 12px;
-  --head: 'Cabinet Grotesk', sans-serif;
-  --body: 'Instrument Sans', sans-serif;
-  --sh: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
-  --sh2: 0 2px 8px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.08);
+  --bg: #080910;
+  --bg1: #0e0f16;
+  --bg2: #14151f;
+  --bg3: #1c1d2a;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e9f0;
+  --text2: #8b8d9e;
+  --text3: #4a4c5e;
+  --blue: #4f7cff;
+  --blue-dim: rgba(79,124,255,0.12);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.1);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.1);
+  --amber: #fbbf24;
+  --r: 10px;
+  --head: 'Plus Jakarta Sans', sans-serif;
+  --mono: 'Inter', sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;}
-::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--head);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+::selection{background:var(--blue-dim);color:var(--blue);}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px;}
 
-/* TOAST */
-#toasts{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
-.toast{background:var(--ink);color:#fff;border-radius:9px;padding:11px 16px;font-size:13px;font-weight:500;min-width:220px;display:flex;align-items:center;gap:9px;animation:tIn .22s ease;box-shadow:var(--sh2);}
-.toast.success{background:#166534;}.toast.error{background:#991b1b;}.toast.info{background:#1e3a8a;}
-@keyframes tIn{from{opacity:0;transform:translateX(14px);}to{opacity:1;transform:none;}}
+/* ── ANIMATED BG GRID ── */
+.grid-bg {
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(79,124,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,124,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
 
-/* NAV */
-nav{position:sticky;top:0;z-index:100;background:rgba(247,245,240,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 40px;height:56px;display:flex;align-items:center;justify-content:space-between;}
-.logo{font-family:var(--head);font-size:18px;font-weight:900;cursor:pointer;letter-spacing:-.4px;display:flex;align-items:center;gap:7px;}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
-.nav-r{display:flex;align-items:center;gap:4px;}
-.nbtn{font-family:var(--body);font-size:13px;font-weight:500;background:none;border:none;color:var(--ink2);padding:6px 14px;border-radius:7px;cursor:pointer;transition:all .15s;}
-.nbtn:hover{background:var(--border);color:var(--ink);}
-.nbtn.primary{background:var(--ink);color:#fff;font-weight:600;}
-.nbtn.primary:hover{background:var(--accent);}
-.nbtn.ghost-danger{color:var(--accent);}.nbtn.ghost-danger:hover{background:#fef2ee;}
-.divider{width:1px;height:20px;background:var(--border);margin:0 4px;}
+/* ── TOAST ── */
+#toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;
+  min-width:220px;display:flex;align-items:center;gap:10px;
+  animation:tslide .2s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  font-family:var(--head);
+}
+.toast.success{border-color:rgba(52,211,153,0.3);color:var(--green);}
+.toast.error{border-color:rgba(248,113,113,0.3);color:var(--red);}
+.toast.info{border-color:rgba(79,124,255,0.3);color:var(--blue);}
+@keyframes tslide{from{opacity:0;transform:translateX(12px) scale(.97);}to{opacity:1;transform:none;}}
 
-/* PAGES */
-.page{display:none;min-height:calc(100vh - 56px);}
-.page.active{display:block;animation:fade .25s ease;}
-@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+/* ── NAV ── */
+nav {
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:52px;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,9,16,0.8);backdrop-filter:blur(20px);
+}
+.logo {
+  font-size:17px;font-weight:800;cursor:pointer;letter-spacing:-.4px;
+  display:flex;align-items:center;gap:8px;color:var(--text);
+  text-decoration:none;
+}
+.logo-mark {
+  width:26px;height:26px;border-radius:7px;
+  background:var(--blue);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;
+  box-shadow:0 0 20px rgba(79,124,255,0.4);
+}
+.nav-r{display:flex;align-items:center;gap:6px;}
+.nb{
+  font-family:var(--head);font-size:13px;font-weight:500;background:none;border:none;
+  color:var(--text2);padding:6px 14px;border-radius:7px;cursor:pointer;transition:all .15s;
+}
+.nb:hover{background:var(--bg2);color:var(--text);}
+.nb.solid{background:var(--blue);color:#fff;font-weight:600;}
+.nb.solid:hover{background:#3d6df5;box-shadow:0 0 20px rgba(79,124,255,0.3);}
+.nb.ghost-red{color:var(--red);}
+.nb.ghost-red:hover{background:var(--red-dim);}
+.nav-sep{width:1px;height:18px;background:var(--border2);margin:0 2px;}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none;min-height:100vh;padding-top:52px;position:relative;z-index:1;}
+.page.on{display:block;animation:pin .3s cubic-bezier(.16,1,.3,1);}
+@keyframes pin{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
 
 /* ── HOME ── */
-.home-inner{max-width:680px;margin:0 auto;padding:80px 24px 60px;text-align:center;}
-.home-inner h1{font-family:var(--head);font-size:clamp(38px,5vw,62px);font-weight:900;letter-spacing:-2px;line-height:1.05;margin-bottom:16px;}
-.home-inner h1 span{color:var(--accent);}
-.home-inner p{font-size:16px;color:var(--ink2);line-height:1.65;margin-bottom:40px;}
-.search-box{display:flex;background:var(--card);border:1.5px solid var(--border);border-radius:11px;overflow:hidden;box-shadow:var(--sh);max-width:480px;margin:0 auto 10px;}
-.search-box input{flex:1;background:none;border:none;color:var(--ink);font-family:var(--body);font-size:14.5px;padding:13px 18px;outline:none;}
-.search-box input::placeholder{color:var(--ink3);}
-.search-box button{background:var(--ink);color:#fff;border:none;font-family:var(--body);font-size:13px;font-weight:600;padding:0 22px;cursor:pointer;transition:background .15s;}
-.search-box button:hover{background:var(--accent);}
-.search-hint{font-size:11.5px;color:var(--ink3);text-align:center;}
-#home-results{max-width:920px;margin:40px auto 0;}
+.home-hero {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 52px);padding:60px 24px;text-align:center;
+  position:relative;
+}
+.home-hero::before {
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:600px;height:400px;
+  background:radial-gradient(ellipse, rgba(79,124,255,0.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-eyebrow {
+  font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;
+  color:var(--blue);margin-bottom:28px;
+  font-family:var(--mono);
+  animation:pin .4s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-h {
+  font-size:clamp(44px,6vw,80px);font-weight:800;letter-spacing:-3px;line-height:.95;
+  margin-bottom:24px;color:var(--text);
+  animation:pin .4s .07s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-h .dim{color:var(--text3);}
+.hero-sub {
+  font-size:16px;color:var(--text2);font-weight:400;max-width:400px;line-height:1.6;
+  margin-bottom:48px;
+  animation:pin .4s .12s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-search {
+  display:flex;background:var(--bg1);border:1px solid var(--border2);
+  border-radius:11px;overflow:hidden;width:100%;max-width:520px;
+  box-shadow:0 0 0 1px transparent;transition:box-shadow .2s;
+  animation:pin .4s .17s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-search:focus-within{box-shadow:0 0 0 2px rgba(79,124,255,0.4);}
+.hero-search input {
+  flex:1;background:none;border:none;color:var(--text);
+  font-family:var(--head);font-size:14px;font-weight:400;
+  padding:14px 18px;outline:none;
+}
+.hero-search input::placeholder{color:var(--text3);}
+.hero-search button {
+  background:var(--blue);color:#fff;border:none;
+  font-family:var(--head);font-size:13px;font-weight:600;
+  padding:0 24px;cursor:pointer;transition:background .15s;
+  white-space:nowrap;
+}
+.hero-search button:hover{background:#3d6df5;}
+.hero-hint{font-size:11.5px;color:var(--text3);margin-top:10px;font-family:var(--mono);animation:pin .4s .2s cubic-bezier(.16,1,.3,1) both;}
+#home-results{width:100%;max-width:960px;margin-top:48px;}
 
 /* ── AUTH ── */
-.auth-outer{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:40px 20px;}
-.auth-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:var(--sh2);}
-.auth-box h2{font-family:var(--head);font-size:26px;font-weight:900;letter-spacing:-.8px;margin-bottom:4px;}
-.auth-box .sub{font-size:13.5px;color:var(--ink3);margin-bottom:28px;}
-.fg{margin-bottom:15px;}
-.fg label{display:block;font-size:11.5px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
-.fg input,.fg select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 13px;outline:none;transition:border .15s;}
-.fg input:focus,.fg select:focus{border-color:var(--ink);}
-.fg select option{background:var(--card);}
-.auth-btn{width:100%;padding:12px;border-radius:8px;border:none;background:var(--ink);color:#fff;font-family:var(--body);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px;}
-.auth-btn:hover{background:var(--accent);}
-.auth-foot{text-align:center;margin-top:16px;font-size:13px;color:var(--ink3);}
-.auth-foot a{color:var(--accent);cursor:pointer;font-weight:600;}
+.auth-wrap{min-height:calc(100vh - 52px);display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+.auth-card{
+  background:var(--bg1);border:1px solid var(--border2);
+  border-radius:16px;padding:40px;width:100%;max-width:400px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.4);
+  animation:pin .3s cubic-bezier(.16,1,.3,1) both;
+}
+.auth-card h2{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-bottom:4px;}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:28px;font-weight:400;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-family:var(--mono);}
+.fg input,.fg select{
+  width:100%;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);font-family:var(--head);font-size:14px;
+  padding:11px 13px;outline:none;transition:border .15s,box-shadow .15s;
+}
+.fg input:focus,.fg select:focus{border-color:rgba(79,124,255,0.5);box-shadow:0 0 0 3px rgba(79,124,255,0.12);}
+.fg select option{background:var(--bg2);}
+.abtn{
+  width:100%;padding:12px;border-radius:8px;border:none;
+  background:var(--blue);color:#fff;font-family:var(--head);font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:4px;
+  box-shadow:0 4px 16px rgba(79,124,255,0.25);
+}
+.abtn:hover{background:#3d6df5;box-shadow:0 4px 20px rgba(79,124,255,0.4);transform:translateY(-1px);}
+.abtn:active{transform:none;}
+.auth-foot{text-align:center;margin-top:16px;font-size:13px;color:var(--text3);}
+.auth-foot a{color:var(--blue);cursor:pointer;font-weight:500;}
+.auth-foot a:hover{text-decoration:underline;}
 
 /* ── DASHBOARD ── */
-.dash{max-width:1100px;margin:0 auto;padding:32px 40px;display:grid;grid-template-columns:220px 1fr;gap:20px;}
-.side{display:flex;flex-direction:column;gap:14px;}
-.pcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--sh);}
-.av{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;font-family:var(--head);font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
-.av.rec{background:var(--accent);}.av.adm{background:#1e3a8a;}
-.pname{font-family:var(--head);font-size:16px;font-weight:800;letter-spacing:-.2px;margin-bottom:2px;}
-.pmail{font-size:11.5px;color:var(--ink3);margin-bottom:10px;word-break:break-all;}
-.rpill{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:3px 10px;border-radius:5px;}
-.rpill.user{background:#eff6ff;color:#1d4ed8;}
-.rpill.recruiter{background:#fff7ed;color:#c2410c;}
-.rpill.admin{background:#fdf4ff;color:#7e22ce;}
-.status-row{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:8px;}
-.sdot{width:7px;height:7px;border-radius:50%;}
-.sdot.on{background:#16a34a;}.sdot.off{background:var(--accent);}
-.side-nav{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.slink{width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:12px 16px;font-family:var(--body);font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px;}
-.slink:last-child{border-bottom:none;}
-.slink:hover,.slink.on{background:var(--bg);color:var(--ink);font-weight:600;}
+.dash{max-width:1140px;margin:0 auto;padding:28px 32px;display:grid;grid-template-columns:240px 1fr;gap:20px;}
+.side{display:flex;flex-direction:column;gap:12px;}
 
-/* panels */
-.main-area{display:flex;flex-direction:column;gap:16px;}
-.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--sh);}
-.panel-title{font-family:var(--head);font-size:16px;font-weight:800;letter-spacing:-.2px;margin-bottom:18px;}
-.tab{display:none;}.tab.on{display:block;animation:fade .2s ease;}
+/* profile card */
+.pcard{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:20px;}
+.pcard-pic-wrap{position:relative;width:56px;height:56px;margin-bottom:14px;}
+.pcard-pic{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--border2);}
+.pcard-initials{
+  width:56px;height:56px;border-radius:50%;
+  background:var(--bg3);border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:var(--text2);
+}
+.upload-overlay{
+  position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0.6);
+  display:flex;align-items:center;justify-content:center;opacity:0;
+  transition:opacity .2s;cursor:pointer;font-size:16px;
+}
+.pcard-pic-wrap:hover .upload-overlay{opacity:1;}
+#pic-input{display:none;}
+.pname{font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:2px;}
+.pmail{font-size:11.5px;color:var(--text3);margin-bottom:10px;word-break:break-all;font-family:var(--mono);}
+.rpill{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;padding:3px 9px;border-radius:5px;font-family:var(--mono);}
+.rpill.user{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(79,124,255,0.2);}
+.rpill.recruiter{background:rgba(251,191,36,0.1);color:var(--amber);border:1px solid rgba(251,191,36,0.2);}
+.rpill.admin{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2);}
+.status-row{display:flex;align-items:center;gap:5px;font-size:11.5px;margin-top:8px;color:var(--text3);}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sdot.on{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,0.5);}
+.sdot.off{background:var(--red);}
+
+/* sidebar nav */
+.snav{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.sl{
+  width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);
+  padding:11px 16px;font-family:var(--head);font-size:13px;font-weight:500;
+  color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px;
+}
+.sl:last-child{border-bottom:none;}
+.sl:hover{background:var(--bg2);color:var(--text);}
+.sl.on{background:var(--bg2);color:var(--text);font-weight:600;}
+.sl .ic{font-size:14px;width:18px;text-align:center;}
+
+/* main panels */
+.main{display:flex;flex-direction:column;gap:16px;}
+.panel{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:24px;}
+.panel-title{font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:20px;color:var(--text);}
+.dtab{display:none;}.dtab.on{display:block;animation:pin .2s cubic-bezier(.16,1,.3,1);}
 
 /* inline form */
 .irow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .irow .full{grid-column:1/-1;}
+.ibtn{
+  background:var(--blue);color:#fff;border:none;
+  font-family:var(--head);font-size:13px;font-weight:600;
+  padding:10px 24px;border-radius:8px;cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 12px rgba(79,124,255,0.2);
+}
+.ibtn:hover{background:#3d6df5;transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,124,255,0.35);}
+.ibtn:active{transform:none;}
 
 /* table */
 .tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.tbl th{text-align:left;color:var(--ink3);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px;border-bottom:1px solid var(--border);font-weight:600;}
-.tbl td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl th{text-align:left;color:var(--text3);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px;border-bottom:1px solid var(--border);font-weight:600;font-family:var(--mono);}
+.tbl td{padding:12px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2);}
+.tbl td:first-child{color:var(--text);}
 .tbl tr:last-child td{border-bottom:none;}
-.tbl tbody tr:hover td{background:var(--bg);}
+.tbl tbody tr{transition:background .1s;}
+.tbl tbody tr:hover td{background:var(--bg2);}
 
-/* chips & action btns */
-.chip{font-size:11px;padding:2px 9px;border-radius:100px;font-weight:500;}
-.chip.blue{background:#eff6ff;color:#1d4ed8;}
-.chip.green{background:#f0fdf4;color:#166534;}
-.chip.red{background:#fff1f2;color:#991b1b;}
-.chip.muted{background:var(--bg);color:var(--ink3);border:1px solid var(--border);}
-.actbtn{font-size:12px;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:var(--body);font-weight:600;transition:all .15s;}
-.actbtn.activate{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
-.actbtn.activate:hover{background:#166534;color:#fff;}
-.actbtn.deactivate{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3;}
-.actbtn.deactivate:hover{background:#991b1b;color:#fff;}
+/* chips */
+.chip{font-size:11px;padding:2px 9px;border-radius:100px;font-weight:600;font-family:var(--mono);}
+.chip.blue{background:var(--blue-dim);color:var(--blue);}
+.chip.green{background:var(--green-dim);color:var(--green);}
+.chip.red{background:var(--red-dim);color:var(--red);}
+.chip.amber{background:rgba(251,191,36,0.1);color:var(--amber);}
+
+/* action btns */
+.actb{font-size:11.5px;padding:4px 12px;border-radius:6px;border:1px solid;cursor:pointer;font-family:var(--head);font-weight:600;transition:all .15s;}
+.actb.act{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.25);}
+.actb.act:hover{background:var(--green);color:#000;border-color:var(--green);}
+.actb.deact{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.25);}
+.actb.deact:hover{background:var(--red);color:#fff;border-color:var(--red);}
 
 /* job cards */
 .jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
-.jcard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .2s;box-shadow:var(--sh);}
-.jcard:hover{box-shadow:var(--sh2);border-color:var(--ink);}
-.jcard .co{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:8px;}
-.jcard .jt{font-family:var(--head);font-size:17px;font-weight:800;letter-spacing:-.2px;margin-bottom:12px;line-height:1.2;}
-.jcard .jdate{font-size:11.5px;color:var(--ink3);margin-bottom:14px;}
-.jcard .apply{width:100%;padding:9px;border-radius:7px;border:1.5px solid var(--border);background:none;color:var(--ink);font-family:var(--body);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
-.jcard .apply:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
-.jcard .apply.done{background:#f0fdf4;color:#166534;border-color:#bbf7d0;cursor:default;}
-.jcard .apply:disabled{opacity:.5;cursor:not-allowed;}
+.jcard{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;transition:all .2s cubic-bezier(.16,1,.3,1);
+  position:relative;overflow:hidden;
+}
+.jcard::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(79,124,255,0.04),transparent);
+  opacity:0;transition:opacity .2s;
+}
+.jcard:hover{border-color:rgba(79,124,255,0.3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.jcard:hover::before{opacity:1;}
+.jco{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px;font-family:var(--mono);}
+.jtit{font-size:16px;font-weight:700;letter-spacing:-.2px;margin-bottom:10px;line-height:1.25;color:var(--text);}
+.jdate{font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono);}
+.japply{
+  width:100%;padding:9px;border-radius:7px;border:1px solid var(--border2);
+  background:transparent;color:var(--text);font-family:var(--head);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .18s;
+}
+.japply:hover{background:var(--blue);border-color:var(--blue);box-shadow:0 4px 16px rgba(79,124,255,0.3);}
+.japply.done{background:var(--green-dim);color:var(--green);border-color:rgba(52,211,153,0.3);cursor:default;}
+.japply:disabled{opacity:.4;cursor:not-allowed;}
+
+/* search bar inside dash */
+.dsearch{
+  display:flex;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:9px;overflow:hidden;max-width:480px;margin-bottom:8px;
+  transition:box-shadow .2s;
+}
+.dsearch:focus-within{box-shadow:0 0 0 2px rgba(79,124,255,0.3);}
+.dsearch input{flex:1;background:none;border:none;color:var(--text);font-family:var(--head);font-size:13.5px;padding:11px 16px;outline:none;}
+.dsearch input::placeholder{color:var(--text3);}
+.dsearch button{background:var(--blue);color:#fff;border:none;font-family:var(--head);font-size:12.5px;font-weight:600;padding:0 20px;cursor:pointer;transition:background .15s;}
+.dsearch button:hover{background:#3d6df5;}
 
 /* notifications */
-.nlist{max-height:320px;overflow-y:auto;}
-.nitem{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.nlist{max-height:360px;overflow-y:auto;}
+.nitem{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
 .nitem:last-child{border-bottom:none;}
-.nicon{width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;}
-.nmsg{font-size:13px;line-height:1.5;color:var(--ink);}
-.ntime{font-size:11px;color:var(--ink3);margin-top:2px;}
+.nicon{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;}
+.nmsg{font-size:13px;line-height:1.5;color:var(--text);}
+.ntime{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
 
 /* pagination */
 .pagi{display:flex;gap:6px;align-items:center;margin-top:14px;}
-.pg{background:var(--bg);border:1px solid var(--border);color:var(--ink2);font-size:12.5px;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:var(--body);font-weight:500;transition:all .15s;}
-.pg:hover:not([disabled]){background:var(--ink);color:#fff;border-color:var(--ink);}
-.pg[disabled]{opacity:.35;cursor:not-allowed;}
-.pg.cur{background:var(--ink);color:#fff;border-color:var(--ink);}
+.pgb{
+  background:var(--bg2);border:1px solid var(--border);color:var(--text2);
+  font-size:12.5px;padding:5px 12px;border-radius:6px;cursor:pointer;
+  font-family:var(--head);font-weight:500;transition:all .15s;
+}
+.pgb:hover:not([disabled]){background:var(--blue);color:#fff;border-color:var(--blue);}
+.pgb[disabled]{opacity:.25;cursor:not-allowed;}
+.pgb.cur{background:var(--blue);color:#fff;border-color:var(--blue);}
 
 /* empty & spinner */
-.empty{text-align:center;padding:44px 20px;color:var(--ink3);}
-.empty .ei{font-size:36px;margin-bottom:10px;}
-.empty p{font-size:13.5px;}
-.spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:rot .6s linear infinite;margin:36px auto;}
+.empty{text-align:center;padding:48px 20px;}
+.empty .ei{font-size:32px;margin-bottom:12px;opacity:.5;}
+.empty p{font-size:13px;color:var(--text3);}
+.spin-wrap{display:flex;justify-content:center;padding:40px;}
+.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:rot .6s linear infinite;}
 @keyframes rot{to{transform:rotate(360deg);}}
 
-@media(max-width:800px){
+/* upload progress */
+.upload-bar{height:2px;background:var(--border);border-radius:1px;margin-top:10px;overflow:hidden;display:none;}
+.upload-bar-fill{height:100%;background:var(--blue);border-radius:1px;transition:width .3s;width:0%;}
+
+@media(max-width:860px){
   nav{padding:0 18px;}
-  .home-inner{padding:48px 18px 40px;}
-  .dash{grid-template-columns:1fr;padding:20px 18px;}
+  .dash{grid-template-columns:1fr;padding:18px;}
   .irow{grid-template-columns:1fr;}.irow .full{grid-column:1;}
+  .home-hero{padding:40px 18px;}
 }
 </style>
 </head>
 <body>
+<div class="grid-bg"></div>
 <div id="toasts"></div>
 
+<!-- NAV -->
 <nav>
-  <div class="logo" onclick="go('home')"><span class="logo-dot"></span>NexWork</div>
-  <div class="nav-r" id="nav-r">
-    <!-- filled by syncNav() -->
+  <div class="logo" onclick="go('home')">
+    <div class="logo-mark">T</div>
+    Talentflow
   </div>
+  <div class="nav-r" id="nav-r"></div>
 </nav>
 
-<!-- HOME -->
-<div class="page active" id="page-home">
-  <div class="home-inner">
-    <h1>Find your next<br><span>opportunity.</span></h1>
-    <p>Search open roles, apply in one click, and get real-time updates when recruiters respond.</p>
-    <div class="search-box">
-      <input type="text" id="hq" placeholder="Job title e.g. Backend Engineer" onkeydown="if(event.key==='Enter')hSearch()"/>
+<!-- ══════════ HOME ══════════ -->
+<div class="page on" id="page-home">
+  <div class="home-hero">
+    <div class="hero-eyebrow">Talentflow / Job Search</div>
+    <h1 class="hero-h">Find the role<br><span class="dim">you were built for.</span></h1>
+    <p class="hero-sub">Search thousands of open positions and apply directly — no middlemen.</p>
+    <div class="hero-search">
+      <input type="text" id="hq" placeholder="Search by job title…" onkeydown="if(event.key==='Enter')hSearch()"/>
       <button onclick="hSearch()">Search</button>
     </div>
-    <p class="search-hint">Title must match exactly as posted by the recruiter</p>
+    <p class="hero-hint">_ type to search · results appear below</p>
+    <div id="home-results"></div>
   </div>
-  <div id="home-results" style="max-width:920px;margin:0 auto;padding:0 24px 60px;"></div>
 </div>
 
-<!-- LOGIN -->
+<!-- ══════════ LOGIN ══════════ -->
 <div class="page" id="page-login">
-  <div class="auth-outer">
-    <div class="auth-box">
+  <div class="auth-wrap">
+    <div class="auth-card">
       <h2>Sign in</h2>
-      <p class="sub">Welcome back to NexWork</p>
-      <div class="fg"><label>Email</label><input type="email" id="l-em" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <p class="auth-sub">Welcome back to Talentflow</p>
+      <div class="fg"><label>Email</label><input type="email" id="l-em" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <div class="fg"><label>Password</label><input type="password" id="l-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-      <button class="auth-btn" onclick="doLogin()">Sign in</button>
-      <div class="auth-foot">No account? <a onclick="go('register')">Register</a></div>
+      <button class="abtn" onclick="doLogin()">Continue</button>
+      <div class="auth-foot">New here? <a onclick="go('register')">Create account</a></div>
     </div>
   </div>
 </div>
 
-<!-- REGISTER -->
+<!-- ══════════ REGISTER ══════════ -->
 <div class="page" id="page-register">
-  <div class="auth-outer">
-    <div class="auth-box">
+  <div class="auth-wrap">
+    <div class="auth-card">
       <h2>Create account</h2>
-      <p class="sub">Join NexWork today</p>
-      <div class="fg"><label>Email</label><input type="email" id="r-em" placeholder="you@example.com"/></div>
+      <p class="auth-sub">Start your journey on Talentflow</p>
+      <div class="fg"><label>Email</label><input type="email" id="r-em" placeholder="you@company.com"/></div>
       <div class="fg"><label>Password</label><input type="password" id="r-pw" placeholder="••••••••"/></div>
       <div class="fg">
-        <label>I am a</label>
+        <label>Role</label>
         <select id="r-role"><option value="user">Job Seeker</option><option value="recruiter">Recruiter</option></select>
       </div>
-      <button class="auth-btn" onclick="doRegister()">Create account</button>
-      <div class="auth-foot">Already registered? <a onclick="go('login')">Sign in</a></div>
+      <button class="abtn" onclick="doRegister()">Create account</button>
+      <div class="auth-foot">Already have an account? <a onclick="go('login')">Sign in</a></div>
     </div>
   </div>
 </div>
 
-<!-- USER DASH -->
+<!-- ══════════ USER DASH ══════════ -->
 <div class="page" id="page-user">
   <div class="dash">
     <div class="side">
       <div class="pcard">
-        <div class="av" id="u-av">U</div>
-        <div class="pname" id="u-nm">–</div>
-        <div class="pmail" id="u-em">–</div>
+        <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-u').click()">
+          <div class="pcard-initials" id="u-pic">U</div>
+          <div class="upload-overlay">📷</div>
+        </div>
+        <input type="file" id="pic-input-u" accept="image/*" onchange="uploadPic(this)"/>
+        <div class="upload-bar" id="u-upload-bar"><div class="upload-bar-fill" id="u-upload-fill"></div></div>
+        <div class="pname" id="u-nm">—</div>
+        <div class="pmail" id="u-em">—</div>
         <span class="rpill user">Job Seeker</span>
         <div class="status-row" id="u-st"><span class="sdot on"></span><span>Active</span></div>
       </div>
-      <div class="side-nav">
-        <button class="slink on" onclick="uSwitch('search',this)">🔍 Search Jobs</button>
-        <button class="slink" onclick="uSwitch('apps',this)">📋 My Applications</button>
-        <button class="slink" onclick="uSwitch('notifs',this)">🔔 Notifications</button>
+      <div class="snav">
+        <button class="sl on" onclick="uTab('search',this)"><span class="ic">⌕</span>Search Jobs</button>
+        <button class="sl" onclick="uTab('apps',this)"><span class="ic">◫</span>Applications</button>
+        <button class="sl" onclick="uTab('notifs',this)"><span class="ic">◎</span>Notifications</button>
       </div>
     </div>
-    <div class="main-area">
-      <div class="tab on" id="utab-search">
+    <div class="main">
+      <div class="dtab on" id="ut-search">
         <div class="panel">
           <div class="panel-title">Search Jobs</div>
-          <div class="search-box" style="max-width:440px;margin-bottom:8px;">
-            <input type="text" id="usq" placeholder="Exact job title…" onkeydown="if(event.key==='Enter')uSearch()"/>
+          <div class="dsearch">
+            <input type="text" id="usq" placeholder="Search by title…" onkeydown="if(event.key==='Enter')uSearch()"/>
             <button onclick="uSearch()">Search</button>
           </div>
-          <p style="font-size:11.5px;color:var(--ink3);margin-bottom:18px;">Title must match exactly as posted</p>
+          <p style="font-size:11px;color:var(--text3);margin-bottom:18px;font-family:var(--mono);">_ partial matches supported</p>
           <div id="u-sr"></div>
           <div class="pagi" id="u-sp"></div>
         </div>
       </div>
-      <div class="tab" id="utab-apps">
+      <div class="dtab" id="ut-apps">
         <div class="panel">
           <div class="panel-title">My Applications</div>
           <div id="u-apps"></div>
           <div class="pagi" id="u-ap"></div>
         </div>
       </div>
-      <div class="tab" id="utab-notifs">
+      <div class="dtab" id="ut-notifs">
         <div class="panel">
           <div class="panel-title">Notifications</div>
           <div class="nlist" id="u-notifs"></div>
@@ -270,42 +454,47 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,240,0.92);backdrop
   </div>
 </div>
 
-<!-- RECRUITER DASH -->
+<!-- ══════════ RECRUITER DASH ══════════ -->
 <div class="page" id="page-recruiter">
   <div class="dash">
     <div class="side">
       <div class="pcard">
-        <div class="av rec" id="rc-av">R</div>
-        <div class="pname" id="rc-nm">–</div>
-        <div class="pmail" id="rc-em">–</div>
+        <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-r').click()">
+          <div class="pcard-initials" id="rc-pic">R</div>
+          <div class="upload-overlay">📷</div>
+        </div>
+        <input type="file" id="pic-input-r" accept="image/*" onchange="uploadPic(this)"/>
+        <div class="upload-bar" id="rc-upload-bar"><div class="upload-bar-fill" id="rc-upload-fill"></div></div>
+        <div class="pname" id="rc-nm">—</div>
+        <div class="pmail" id="rc-em">—</div>
         <span class="rpill recruiter">Recruiter</span>
         <div class="status-row"><span class="sdot on"></span><span>Active</span></div>
       </div>
-      <div class="side-nav">
-        <button class="slink on" onclick="rcSwitch('post',this)">➕ Post a Job</button>
-        <button class="slink" onclick="rcSwitch('jobs',this)">📂 My Posts</button>
-        <button class="slink" onclick="rcSwitch('notifs',this)">🔔 Notifications</button>
+      <div class="snav">
+        <button class="sl on" onclick="rcTab('post',this)"><span class="ic">＋</span>Post Job</button>
+        <button class="sl" onclick="rcTab('posts',this)"><span class="ic">◫</span>My Posts</button>
+        <button class="sl" onclick="rcTab('notifs',this)"><span class="ic">◎</span>Notifications</button>
       </div>
     </div>
-    <div class="main-area">
-      <div class="tab on" id="rctab-post">
+    <div class="main">
+      <div class="dtab on" id="rct-post">
         <div class="panel">
-          <div class="panel-title">Post a New Job</div>
+          <div class="panel-title">Post a Job</div>
           <div class="irow">
-            <div class="fg"><label>Job Title</label><input type="text" id="jt" placeholder="e.g. Backend Engineer"/></div>
-            <div class="fg"><label>Company</label><input type="text" id="jc" placeholder="e.g. Acme Corp"/></div>
-            <div class="full"><button class="auth-btn" style="width:auto;padding:11px 28px;" onclick="doPostJob()">Post Job</button></div>
+            <div class="fg"><label>Job Title</label><input type="text" id="jt" placeholder="e.g. Senior Backend Engineer"/></div>
+            <div class="fg"><label>Company</label><input type="text" id="jc" placeholder="e.g. Acme Inc."/></div>
+            <div class="full"><button class="ibtn" onclick="doPostJob()">Publish Listing</button></div>
           </div>
         </div>
       </div>
-      <div class="tab" id="rctab-jobs">
+      <div class="dtab" id="rct-posts">
         <div class="panel">
-          <div class="panel-title">My Job Posts</div>
+          <div class="panel-title">My Posts</div>
           <div id="rc-jobs"></div>
           <div class="pagi" id="rc-jp"></div>
         </div>
       </div>
-      <div class="tab" id="rctab-notifs">
+      <div class="dtab" id="rct-notifs">
         <div class="panel">
           <div class="panel-title">Notifications</div>
           <div class="nlist" id="rc-notifs"></div>
@@ -316,31 +505,36 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,240,0.92);backdrop
   </div>
 </div>
 
-<!-- ADMIN DASH -->
+<!-- ══════════ ADMIN DASH ══════════ -->
 <div class="page" id="page-admin">
   <div class="dash">
     <div class="side">
       <div class="pcard">
-        <div class="av adm" id="ad-av">A</div>
-        <div class="pname" id="ad-nm">–</div>
-        <div class="pmail" id="ad-em">–</div>
+        <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-a').click()">
+          <div class="pcard-initials" id="ad-pic">A</div>
+          <div class="upload-overlay">📷</div>
+        </div>
+        <input type="file" id="pic-input-a" accept="image/*" onchange="uploadPic(this)"/>
+        <div class="upload-bar" id="ad-upload-bar"><div class="upload-bar-fill" id="ad-upload-fill"></div></div>
+        <div class="pname" id="ad-nm">—</div>
+        <div class="pmail" id="ad-em">—</div>
         <span class="rpill admin">Admin</span>
         <div class="status-row"><span class="sdot on"></span><span>Active</span></div>
       </div>
-      <div class="side-nav">
-        <button class="slink on" onclick="adSwitch('users',this)">👥 Users</button>
-        <button class="slink" onclick="adSwitch('notifs',this)">🔔 Notifications</button>
+      <div class="snav">
+        <button class="sl on" onclick="adTab('users',this)"><span class="ic">◈</span>Users</button>
+        <button class="sl" onclick="adTab('notifs',this)"><span class="ic">◎</span>Notifications</button>
       </div>
     </div>
-    <div class="main-area">
-      <div class="tab on" id="adtab-users">
+    <div class="main">
+      <div class="dtab on" id="adt-users">
         <div class="panel">
-          <div class="panel-title">All Users</div>
+          <div class="panel-title">User Management</div>
           <div id="ad-users"></div>
           <div class="pagi" id="ad-up"></div>
         </div>
       </div>
-      <div class="tab" id="adtab-notifs">
+      <div class="dtab" id="adt-notifs">
         <div class="panel">
           <div class="panel-title">Notifications</div>
           <div class="nlist" id="ad-notifs"></div>
@@ -352,138 +546,201 @@ nav{position:sticky;top:0;z-index:100;background:rgba(247,245,240,0.92);backdrop
 </div>
 
 <script>
+// ═══════════════════════════════
+// CONFIG
+// ═══════════════════════════════
 const BASE = 'https://fastapi-job-portal-1.onrender.com';
-let token = localStorage.getItem('nw_tok') || null;
+let token = localStorage.getItem('tf_tok') || null;
 let me = null;
-const PG = { br:1, uS:1, uA:1, uN:1, rcJ:1, rcN:1, adU:1, adN:1 };
-const LIM = 8;
+const PG = {uS:1,uA:1,uN:1,rcJ:1,rcN:1,adU:1,adN:1};
+const LIM = 9;
 
-// ── TOAST ──
+// ═══════════════════════════════
+// TOAST
+// ═══════════════════════════════
 function toast(msg, type='info') {
   const c = document.getElementById('toasts'), d = document.createElement('div');
   d.className = `toast ${type}`;
-  d.innerHTML = `<span>${{success:'✓',error:'✕',info:'i'}[type]||'i'}</span><span>${msg}</span>`;
-  c.appendChild(d); setTimeout(() => d.remove(), 3500);
+  const icons = {success:'✓', error:'✕', info:'·'};
+  d.innerHTML = `<span style="font-family:var(--mono);font-size:12px;">${icons[type]||'·'}</span><span>${msg}</span>`;
+  c.appendChild(d);
+  setTimeout(() => { d.style.opacity='0'; d.style.transform='translateX(8px)'; d.style.transition='all .2s'; setTimeout(()=>d.remove(),200); }, 3200);
 }
 
-// ── ROUTING ──
+// ═══════════════════════════════
+// ROUTING
+// ═══════════════════════════════
 function go(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + id)?.classList.add('active');
-  window.scrollTo(0, 0);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById('page-'+id)?.classList.add('on');
+  window.scrollTo(0,0);
 }
 
 function gotoDash() {
   if (!me) return go('login');
-  if (me.role === 'user')      { buildUDash();  go('user'); }
-  else if (me.role === 'recruiter') { buildRcDash(); go('recruiter'); }
-  else                         { buildAdDash(); go('admin'); }
+  if (me.role==='user') { buildU(); go('user'); }
+  else if (me.role==='recruiter') { buildRc(); go('recruiter'); }
+  else { buildAd(); go('admin'); }
 }
 
-// ── NAV ──
+// ═══════════════════════════════
+// NAV
+// ═══════════════════════════════
 function syncNav() {
   const r = document.getElementById('nav-r');
   if (token && me) {
+    const pic = me.profile_pic
+      ? `<img src="${me.profile_pic}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--border2);" />`
+      : `<span style="width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${me.email[0].toUpperCase()}</span>`;
     r.innerHTML = `
-      <span style="font-size:13px;color:var(--ink3);padding:0 6px;">${me.email.split('@')[0]}</span>
-      <div class="divider"></div>
-      <button class="nbtn" onclick="gotoDash()">Dashboard</button>
-      <button class="nbtn ghost-danger" onclick="doLogout()">Sign out</button>`;
+      <div style="display:flex;align-items:center;gap:8px;padding:0 8px;">
+        ${pic}
+        <span style="font-size:13px;color:var(--text2);">${me.email.split('@')[0]}</span>
+      </div>
+      <div class="nav-sep"></div>
+      <button class="nb" onclick="gotoDash()">Dashboard</button>
+      <button class="nb ghost-red" onclick="doLogout()">Sign out</button>`;
   } else {
     r.innerHTML = `
-      <button class="nbtn" onclick="go('login')">Sign in</button>
-      <button class="nbtn primary" onclick="go('register')">Register</button>`;
+      <button class="nb" onclick="go('login')">Sign in</button>
+      <button class="nb solid" onclick="go('register')">Get started</button>`;
   }
 }
 
-// ── API ──
-async function api(path, opts = {}) {
-  const h = { 'Content-Type': 'application/json' };
+// ═══════════════════════════════
+// API
+// ═══════════════════════════════
+async function api(path, opts={}) {
+  const h = {'Content-Type':'application/json'};
   if (token) h['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(BASE + path, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
-  if (res.status === 204) return null;
+  const res = await fetch(BASE+path, {...opts, headers:{...h,...(opts.headers||{})}});
+  if (res.status===204) return null;
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
   return data;
 }
 
-// ── AUTH ──
+// ═══════════════════════════════
+// AUTH
+// ═══════════════════════════════
 async function doLogin() {
   const em = document.getElementById('l-em').value.trim();
   const pw = document.getElementById('l-pw').value;
-  if (!em || !pw) return toast('Fill in all fields', 'error');
+  if (!em||!pw) return toast('Fill in all fields','error');
   try {
-    const res = await fetch(BASE + '/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ username: em, password: pw })
+    const res = await fetch(BASE+'/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({username:em, password:pw})
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Login failed');
-    token = data.access_token; // ✅ underscore
-    localStorage.setItem('nw_tok', token);
+    if (!res.ok) throw new Error(data.detail||'Login failed');
+    token = data.access_token;
+    localStorage.setItem('tf_tok', token);
     await fetchMe();
     syncNav();
-    toast('Signed in', 'success');
+    toast('Signed in','success');
     gotoDash();
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message,'error'); }
 }
 
 async function doRegister() {
   const em   = document.getElementById('r-em').value.trim();
   const pw   = document.getElementById('r-pw').value;
   const role = document.getElementById('r-role').value;
-  if (!em || !pw) return toast('Fill in all fields', 'error');
+  if (!em||!pw) return toast('Fill in all fields','error');
   try {
-    await api('/register', { method: 'POST', body: JSON.stringify({ email: em, password: pw, role }) });
-    toast('Account created — please sign in', 'success');
+    await api('/register',{method:'POST',body:JSON.stringify({email:em,password:pw,role})});
+    toast('Account created — sign in','success');
     go('login');
-  } catch(e) { toast(e.message, 'error'); }
+  } catch(e) { toast(e.message,'error'); }
 }
 
 function doLogout() {
-  token = null; me = null;
-  localStorage.removeItem('nw_tok');
+  token=null; me=null;
+  localStorage.removeItem('tf_tok');
   syncNav(); go('home');
-  toast('Signed out', 'info');
+  toast('Signed out','info');
 }
 
 async function fetchMe() {
-  for (const path of ['/profile/user', '/profile/recruiter', '/profile/admin']) {
-    try { me = await api(path); return; } catch(e) {}
+  for (const p of ['/profile/user','/profile/recruiter','/profile/admin']) {
+    try { me = await api(p); return; } catch(e) {}
   }
-  throw new Error('Could not load profile');
+  throw new Error('Profile load failed');
 }
 
-// ── JOBS ──
+// ═══════════════════════════════
+// PROFILE PIC UPLOAD
+// ═══════════════════════════════
+async function uploadPic(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  const role = me?.role;
+  const prefix = role==='recruiter'?'rc':role==='admin'?'ad':'u';
+  const bar  = document.getElementById(`${prefix}-upload-bar`);
+  const fill = document.getElementById(`${prefix}-upload-fill`);
+
+  bar.style.display='block';
+  fill.style.width='30%';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const res = await fetch(BASE+'/profile/upload', {
+      method:'POST',
+      headers:{'Authorization':`Bearer ${token}`},
+      body:fd
+    });
+    fill.style.width='80%';
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail||'Upload failed');
+    fill.style.width='100%';
+    setTimeout(()=>{bar.style.display='none'; fill.style.width='0%';},600);
+
+    // update profile pic in card
+    me.profile_pic = data.image_url;
+    const picEl = document.getElementById(`${prefix}-pic`);
+    picEl.outerHTML = `<img class="pcard-pic" id="${prefix}-pic" src="${data.image_url}" />`;
+    syncNav();
+    toast('Profile picture updated','success');
+  } catch(e) {
+    bar.style.display='none'; fill.style.width='0%';
+    toast(e.message,'error');
+  }
+}
+
+// ═══════════════════════════════
+// JOBS
+// ═══════════════════════════════
 function jCard(j) {
   return `<div class="jcard">
-    <div class="co">${j.company}</div>
-    <div class="jt">${j.title}</div>
+    <div class="jco">${j.company}</div>
+    <div class="jtit">${j.title}</div>
     <div class="jdate">${new Date(j.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
-    <button class="apply" id="ab${j.id}" onclick="applyJob(${j.id},this)">${token ? 'Apply' : 'Login to apply'}</button>
+    <button class="japply" id="ab${j.id}" onclick="applyJob(${j.id},this)">${token?'Apply':'Sign in to apply'}</button>
   </div>`;
 }
 
 async function applyJob(id, btn) {
-  if (!token) { toast('Sign in to apply', 'error'); return go('login'); }
-  btn.disabled = true; btn.textContent = 'Applying…';
+  if (!token) { toast('Sign in to apply','error'); return go('login'); }
+  btn.disabled=true; btn.textContent='Applying…';
   try {
-    await api(`/apply/${id}`, { method: 'POST' });
-    btn.className = 'apply done'; btn.textContent = '✓ Applied'; btn.disabled = false;
-    toast('Application submitted', 'success');
+    await api(`/apply/${id}`,{method:'POST'});
+    btn.className='japply done'; btn.textContent='✓ Applied'; btn.disabled=false;
+    toast('Application submitted','success');
   } catch(e) {
-    btn.disabled = false;
+    btn.disabled=false;
     if (e.message.toLowerCase().includes('already')) {
-      btn.className = 'apply done'; btn.textContent = '✓ Applied';
-      toast('Already applied', 'info');
+      btn.className='japply done'; btn.textContent='✓ Applied';
     } else {
-      btn.textContent = 'Apply'; toast(e.message, 'error');
+      btn.textContent='Apply'; toast(e.message,'error');
     }
   }
 }
 
-async function searchJobs(title, skip, lim) {
+async function fetchJobs(title, skip, lim) {
   if (!title) return [];
   return await api(`/search?title=${encodeURIComponent(title)}&skip=${skip}&limit=${lim}`);
 }
@@ -492,211 +749,230 @@ async function searchJobs(title, skip, lim) {
 async function hSearch() {
   const q = document.getElementById('hq').value.trim();
   const el = document.getElementById('home-results');
-  if (!q) return toast('Enter a job title', 'error');
-  el.innerHTML = '<div class="spin"></div>';
+  if (!q) return toast('Enter a search term','error');
+  el.innerHTML = '<div class="spin-wrap"><div class="spin"></div></div>';
   try {
-    const jobs = await searchJobs(q, 0, 6);
-    if (!jobs.length) { el.innerHTML = `<div class="empty"><div class="ei">🔍</div><p>No results for "<strong>${q}</strong>" — title must match exactly</p></div>`; return; }
+    const jobs = await fetchJobs(q,0,6);
+    if (!jobs.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No results for "${q}"</p></div>`; return; }
     el.innerHTML = `<div class="jgrid">${jobs.map(jCard).join('')}</div>`;
-  } catch(e) { el.innerHTML = `<div class="empty"><div class="ei">❌</div><p>${e.message}</p></div>`; }
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
-// ── USER DASH ──
-function buildUDash() {
-  document.getElementById('u-av').textContent = me.email[0].toUpperCase();
+// ═══════════════════════════════
+// USER DASH
+// ═══════════════════════════════
+function buildU() {
   document.getElementById('u-nm').textContent = me.email.split('@')[0];
   document.getElementById('u-em').textContent = me.email;
-  const s = document.getElementById('u-st');
-  s.innerHTML = `<span class="sdot ${me.is_active?'on':'off'}"></span><span>${me.is_active?'Active':'Inactive'}</span>`;
+  const st = document.getElementById('u-st');
+  st.innerHTML = `<span class="sdot ${me.is_active?'on':'off'}"></span><span>${me.is_active?'Active':'Inactive'}</span>`;
+  if (me.profile_pic) {
+    document.getElementById('u-pic').outerHTML = `<img class="pcard-pic" id="u-pic" src="${me.profile_pic}"/>`;
+  } else {
+    document.getElementById('u-pic').textContent = me.email[0].toUpperCase();
+  }
 }
 
-function uSwitch(name, btn) {
-  document.querySelectorAll('#page-user .tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('#page-user .slink').forEach(b => b.classList.remove('on'));
-  document.getElementById(`utab-${name}`).classList.add('on'); btn.classList.add('on');
-  if (name === 'apps')   loadUApps();
-  if (name === 'notifs') loadUNotifs();
+function uTab(n, btn) {
+  document.querySelectorAll('#page-user .dtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#page-user .sl').forEach(b=>b.classList.remove('on'));
+  document.getElementById(`ut-${n}`).classList.add('on'); btn.classList.add('on');
+  if (n==='apps')   loadUApps();
+  if (n==='notifs') loadUNotifs();
 }
 
-async function uSearch() {
-  PG.uS = 1; loadUSearch();
-}
-async function loadUSearch() {
+async function uSearch() { PG.uS=1; _loadUSearch(); }
+async function _loadUSearch() {
   const q = document.getElementById('usq').value.trim();
   const el = document.getElementById('u-sr');
-  if (!q) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="spin"></div>';
+  if (!q) { el.innerHTML=''; return; }
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
-    const jobs = await searchJobs(q, (PG.uS-1)*LIM, LIM);
-    if (!jobs.length) { el.innerHTML = `<div class="empty"><div class="ei">🔍</div><p>No results for "<strong>${q}</strong>"</p></div>`; return; }
-    el.innerHTML = `<div class="jgrid">${jobs.map(jCard).join('')}</div>`;
-    rPagi('u-sp', PG.uS, jobs.length===LIM, p => { PG.uS=p; loadUSearch(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    const jobs = await fetchJobs(q,(PG.uS-1)*LIM,LIM);
+    if (!jobs.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No results for "${q}"</p></div>`; return; }
+    el.innerHTML=`<div class="jgrid">${jobs.map(jCard).join('')}</div>`;
+    rPagi('u-sp',PG.uS,jobs.length===LIM,p=>{PG.uS=p;_loadUSearch();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
-document.getElementById('usq').addEventListener('keydown', e => { if(e.key==='Enter') uSearch(); });
+document.getElementById('usq').addEventListener('keydown', e=>{if(e.key==='Enter')uSearch();});
 
 async function loadUApps() {
   const el = document.getElementById('u-apps');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const apps = await api(`/profile/user/applications?skip=${(PG.uA-1)*LIM}&limit=${LIM}`);
-    if (!apps.length) { el.innerHTML = `<div class="empty"><div class="ei">📋</div><p>No applications yet</p></div>`; return; }
-    el.innerHTML = `<table class="tbl">
-      <thead><tr><th>Job ID</th><th>Status</th><th>Date</th></tr></thead>
-      <tbody>${apps.map(a => `<tr>
+    if (!apps.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No applications yet</p></div>`; return; }
+    el.innerHTML=`<table class="tbl">
+      <thead><tr><th>Job ID</th><th>Status</th><th>Applied</th></tr></thead>
+      <tbody>${apps.map(a=>`<tr>
         <td>Job #${a.job_id}</td>
         <td><span class="chip blue">${a.status}</span></td>
-        <td style="color:var(--ink3)">${new Date(a.applied_at).toLocaleDateString()}</td>
+        <td>${new Date(a.applied_at).toLocaleDateString()}</td>
       </tr>`).join('')}</tbody></table>`;
-    rPagi('u-ap', PG.uA, apps.length===LIM, p => { PG.uA=p; loadUApps(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rPagi('u-ap',PG.uA,apps.length===LIM,p=>{PG.uA=p;loadUApps();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
 async function loadUNotifs() {
   const el = document.getElementById('u-notifs');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const ns = await api(`/profile/notifications?skip=${(PG.uN-1)*LIM}&limit=${LIM}`);
-    rNotifs(el, ns);
-    rPagi('u-np', PG.uN, ns.length===LIM, p => { PG.uN=p; loadUNotifs(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rNotifs(el,ns);
+    rPagi('u-np',PG.uN,ns.length===LIM,p=>{PG.uN=p;loadUNotifs();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
-// ── RECRUITER DASH ──
-function buildRcDash() {
-  document.getElementById('rc-av').textContent = me.email[0].toUpperCase();
+// ═══════════════════════════════
+// RECRUITER DASH
+// ═══════════════════════════════
+function buildRc() {
   document.getElementById('rc-nm').textContent = me.email.split('@')[0];
   document.getElementById('rc-em').textContent = me.email;
+  if (me.profile_pic) {
+    document.getElementById('rc-pic').outerHTML = `<img class="pcard-pic" id="rc-pic" src="${me.profile_pic}"/>`;
+  } else {
+    document.getElementById('rc-pic').textContent = me.email[0].toUpperCase();
+  }
 }
 
-function rcSwitch(name, btn) {
-  document.querySelectorAll('#page-recruiter .tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('#page-recruiter .slink').forEach(b => b.classList.remove('on'));
-  document.getElementById(`rctab-${name}`).classList.add('on'); btn.classList.add('on');
-  if (name === 'jobs')   loadRcJobs();
-  if (name === 'notifs') loadRcNotifs();
+function rcTab(n, btn) {
+  document.querySelectorAll('#page-recruiter .dtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#page-recruiter .sl').forEach(b=>b.classList.remove('on'));
+  document.getElementById(`rct-${n}`).classList.add('on'); btn.classList.add('on');
+  if (n==='posts')  loadRcJobs();
+  if (n==='notifs') loadRcNotifs();
 }
 
 async function doPostJob() {
   const title   = document.getElementById('jt').value.trim();
   const company = document.getElementById('jc').value.trim();
-  if (!title || !company) return toast('Fill in both fields', 'error');
+  if (!title||!company) return toast('Fill in both fields','error');
   try {
-    const j = await api('/postjob', { method: 'POST', body: JSON.stringify({ title, company }) });
-    toast(`"${j.title}" posted`, 'success');
-    document.getElementById('jt').value = '';
-    document.getElementById('jc').value = '';
-  } catch(e) { toast(e.message, 'error'); }
+    const j = await api('/postjob',{method:'POST',body:JSON.stringify({title,company})});
+    toast(`"${j.title}" published`,'success');
+    document.getElementById('jt').value='';
+    document.getElementById('jc').value='';
+  } catch(e) { toast(e.message,'error'); }
 }
 
 async function loadRcJobs() {
   const el = document.getElementById('rc-jobs');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const jobs = await api(`/profile/recruiter/posts?skip=${(PG.rcJ-1)*LIM}&limit=${LIM}`);
-    if (!jobs.length) { el.innerHTML = `<div class="empty"><div class="ei">📂</div><p>No posts yet</p></div>`; return; }
-    el.innerHTML = `<table class="tbl">
-      <thead><tr><th>Title</th><th>Company</th><th>Posted</th></tr></thead>
-      <tbody>${jobs.map(j => `<tr>
+    if (!jobs.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No listings yet</p></div>`; return; }
+    el.innerHTML=`<table class="tbl">
+      <thead><tr><th>Title</th><th>Company</th><th>Published</th></tr></thead>
+      <tbody>${jobs.map(j=>`<tr>
         <td><strong>${j.title}</strong></td>
         <td>${j.company}</td>
-        <td style="color:var(--ink3)">${new Date(j.created_at).toLocaleDateString()}</td>
+        <td>${new Date(j.created_at).toLocaleDateString()}</td>
       </tr>`).join('')}</tbody></table>`;
-    rPagi('rc-jp', PG.rcJ, jobs.length===LIM, p => { PG.rcJ=p; loadRcJobs(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rPagi('rc-jp',PG.rcJ,jobs.length===LIM,p=>{PG.rcJ=p;loadRcJobs();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
 async function loadRcNotifs() {
   const el = document.getElementById('rc-notifs');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const ns = await api(`/profile/notifications?skip=${(PG.rcN-1)*LIM}&limit=${LIM}`);
-    rNotifs(el, ns);
-    rPagi('rc-np', PG.rcN, ns.length===LIM, p => { PG.rcN=p; loadRcNotifs(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rNotifs(el,ns);
+    rPagi('rc-np',PG.rcN,ns.length===LIM,p=>{PG.rcN=p;loadRcNotifs();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
-// ── ADMIN DASH ──
-function buildAdDash() {
-  document.getElementById('ad-av').textContent = me.email[0].toUpperCase();
+// ═══════════════════════════════
+// ADMIN DASH
+// ═══════════════════════════════
+function buildAd() {
   document.getElementById('ad-nm').textContent = me.email.split('@')[0];
   document.getElementById('ad-em').textContent = me.email;
+  if (me.profile_pic) {
+    document.getElementById('ad-pic').outerHTML = `<img class="pcard-pic" id="ad-pic" src="${me.profile_pic}"/>`;
+  } else {
+    document.getElementById('ad-pic').textContent = me.email[0].toUpperCase();
+  }
   loadAdUsers();
 }
 
-function adSwitch(name, btn) {
-  document.querySelectorAll('#page-admin .tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('#page-admin .slink').forEach(b => b.classList.remove('on'));
-  document.getElementById(`adtab-${name}`).classList.add('on'); btn.classList.add('on');
-  if (name === 'users')  loadAdUsers();
-  if (name === 'notifs') loadAdNotifs();
+function adTab(n, btn) {
+  document.querySelectorAll('#page-admin .dtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#page-admin .sl').forEach(b=>b.classList.remove('on'));
+  document.getElementById(`adt-${n}`).classList.add('on'); btn.classList.add('on');
+  if (n==='users')  loadAdUsers();
+  if (n==='notifs') loadAdNotifs();
 }
 
 async function loadAdUsers() {
   const el = document.getElementById('ad-users');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const users = await api(`/admin/users?skip=${(PG.adU-1)*LIM}&limit=${LIM}`);
-    if (!users.length) { el.innerHTML = `<div class="empty"><div class="ei">👥</div><p>No users</p></div>`; return; }
-    el.innerHTML = `<table class="tbl">
+    if (!users.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No users found</p></div>`; return; }
+    el.innerHTML=`<table class="tbl">
       <thead><tr><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>${users.map(u => `<tr>
+      <tbody>${users.map(u=>`<tr>
         <td>${u.email}</td>
         <td><span class="rpill ${u.role}">${u.role}</span></td>
         <td><span class="chip ${u.is_active?'green':'red'}">${u.is_active?'Active':'Inactive'}</span></td>
         <td>${u.is_active
-          ? `<button class="actbtn deactivate" onclick="toggleUser(${u.id},'deactivate')">Deactivate</button>`
-          : `<button class="actbtn activate"   onclick="toggleUser(${u.id},'activate')">Activate</button>`}
-        </td>
+          ? `<button class="actb deact" onclick="toggleUser(${u.id},'deactivate')">Deactivate</button>`
+          : `<button class="actb act"   onclick="toggleUser(${u.id},'activate')">Activate</button>`}</td>
       </tr>`).join('')}</tbody></table>`;
-    rPagi('ad-up', PG.adU, users.length===LIM, p => { PG.adU=p; loadAdUsers(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rPagi('ad-up',PG.adU,users.length===LIM,p=>{PG.adU=p;loadAdUsers();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
 async function toggleUser(uid, action) {
   try {
-    await api(`/admin/user/${action}?user_id=${uid}`, { method: 'PATCH' });
-    toast(`User ${action}d`, 'success'); loadAdUsers();
-  } catch(e) { toast(e.message, 'error'); }
+    await api(`/admin/user/${action}?user_id=${uid}`,{method:'PATCH'});
+    toast(`User ${action}d`,'success'); loadAdUsers();
+  } catch(e) { toast(e.message,'error'); }
 }
 
 async function loadAdNotifs() {
   const el = document.getElementById('ad-notifs');
-  el.innerHTML = '<div class="spin"></div>';
+  el.innerHTML='<div class="spin-wrap"><div class="spin"></div></div>';
   try {
     const ns = await api(`/profile/notifications?skip=${(PG.adN-1)*LIM}&limit=${LIM}`);
-    rNotifs(el, ns);
-    rPagi('ad-np', PG.adN, ns.length===LIM, p => { PG.adN=p; loadAdNotifs(); });
-  } catch(e) { el.innerHTML = `<div class="empty"><p>${e.message}</p></div>`; }
+    rNotifs(el,ns);
+    rPagi('ad-np',PG.adN,ns.length===LIM,p=>{PG.adN=p;loadAdNotifs();});
+  } catch(e) { el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`; }
 }
 
-// ── SHARED ──
+// ═══════════════════════════════
+// SHARED
+// ═══════════════════════════════
 function rNotifs(el, ns) {
-  if (!ns || !ns.length) { el.innerHTML = `<div class="empty"><div class="ei">🔔</div><p>No notifications</p></div>`; return; }
-  el.innerHTML = ns.map(n => {
+  if (!ns||!ns.length) { el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No notifications</p></div>`; return; }
+  el.innerHTML = ns.map(n=>{
     const raw = n.message;
-    const msg = typeof raw === 'string' ? raw : (raw?.message || raw?.details || raw?.detail || JSON.stringify(raw));
+    const msg = typeof raw==='string'?raw:(raw?.message||raw?.details||raw?.detail||JSON.stringify(raw));
     return `<div class="nitem">
-      <div class="nicon">🔔</div>
+      <div class="nicon">◎</div>
       <div><div class="nmsg">${msg}</div><div class="ntime">${new Date(n.created_at).toLocaleString()}</div></div>
     </div>`;
   }).join('');
 }
 
-function rPagi(containerId, cur, hasNext, cb) {
-  const el = document.getElementById(containerId);
-  if (!el || (cur === 1 && !hasNext)) { if(el) el.innerHTML=''; return; }
-  el.innerHTML = `
-    <button class="pg"${cur===1?' disabled':''} onclick="(${cb.toString()})(${cur-1})">← Prev</button>
-    <span class="pg cur">${cur}</span>
-    <button class="pg"${!hasNext?' disabled':''} onclick="(${cb.toString()})(${cur+1})">Next →</button>`;
+function rPagi(id, cur, hasNext, cb) {
+  const el = document.getElementById(id);
+  if (!el||(cur===1&&!hasNext)) { if(el) el.innerHTML=''; return; }
+  el.innerHTML=`
+    <button class="pgb"${cur===1?' disabled':''} onclick="(${cb.toString()})(${cur-1})">← Prev</button>
+    <span class="pgb cur">${cur}</span>
+    <button class="pgb"${!hasNext?' disabled':''} onclick="(${cb.toString()})(${cur+1})">Next →</button>`;
 }
 
-// ── INIT ──
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
 async function init() {
   if (token) {
     try { await fetchMe(); syncNav(); }
-    catch(e) { token = null; localStorage.removeItem('nw_tok'); syncNav(); }
+    catch(e) { token=null; localStorage.removeItem('tf_tok'); syncNav(); }
   } else { syncNav(); }
 }
 init();

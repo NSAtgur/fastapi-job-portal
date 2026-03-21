@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks,UploadFile,File
 from database import UsersDB,ApplicationsDB, JobsDB,NotificationsDB, get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
@@ -10,8 +10,18 @@ from typing import List
 from ws_manager import ConnectionManager, manager
 from bgtasks import notify
 from sqlalchemy import or_
+from dotenv import load_dotenv
+import os 
+from PIL import Image
+import cloudinary
+import cloudinary.uploader
 
 router = APIRouter()
+load_dotenv()
+
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
 @router.post('/register', response_model = UserResponse)
 def register_user(user: CreateUser, db: Session = Depends(get_db)):
@@ -205,3 +215,37 @@ async def websocket_Endpoint(websocket:WebSocket, db: Session = Depends(get_db))
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(user.id)
+
+@router.post('/profile/upload')
+async def upload_pic(file: UploadFile = File(...), user = Depends(login_required), db:Session = Depends(get_db)):
+
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail="Only images allowed")
+    
+    try:
+        image = Image.open(file.file)
+        image.verify()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only images allowed")
+    
+    file.file.seek(0)
+
+    if user.profile_pic_public_id:
+        try:
+            cloudinary.uploader.destroy(user.profile_pic_public_id)
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = "Failed to delete old image")
+        
+    result = cloudinary.uploader.upload(file.file)
+    image_url = result.get("secure_url")
+    public_id = result.get("public_id")
+
+    user.profile_pic = image_url
+    user.profile_pic_public_id = public_id
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "message":"Profile picture uploaded successfully",
+        "image_url":image_url
+    }

@@ -22,6 +22,8 @@ class UsersDB(Base):
     id = Column(Integer, primary_key = True)
     email = Column(String, unique = True, index =True)
     password = Column(String)
+    profile_pic = Column(String,nullable = True)
+    profile_pic_public_id = Column(String, nullable = True)
     role = Column(String, default = "user", nullable = False)
     is_active = Column(Boolean, default = True)
 
