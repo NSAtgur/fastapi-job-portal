@@ -673,6 +673,21 @@ async function fetchMe() {
 // ═══════════════════════════════
 // PROFILE PIC UPLOAD
 // ═══════════════════════════════
+// updates avatar circle in place — never replaces the element so click handler stays intact
+function setAvatar(id, url, email) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (url) {
+    el.style.backgroundImage = `url('${url}')`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = '';
+    el.textContent = email[0].toUpperCase();
+  }
+}
+
 async function uploadPic(input) {
   if (!input.files[0]) return;
   const file = input.files[0];
@@ -699,10 +714,8 @@ async function uploadPic(input) {
     fill.style.width='100%';
     setTimeout(()=>{bar.style.display='none'; fill.style.width='0%';},600);
 
-    // update profile pic in card
     me.profile_pic = data.image_url;
-    const picEl = document.getElementById(`${prefix}-pic`);
-    picEl.outerHTML = `<img class="pcard-pic" id="${prefix}-pic" src="${data.image_url}" />`;
+    setAvatar(`${prefix}-pic`, data.image_url, me.email);
     syncNav();
     toast('Profile picture updated','success');
   } catch(e) {
@@ -766,11 +779,7 @@ function buildU() {
   document.getElementById('u-em').textContent = me.email;
   const st = document.getElementById('u-st');
   st.innerHTML = `<span class="sdot ${me.is_active?'on':'off'}"></span><span>${me.is_active?'Active':'Inactive'}</span>`;
-  if (me.profile_pic) {
-    document.getElementById('u-pic').outerHTML = `<img class="pcard-pic" id="u-pic" src="${me.profile_pic}"/>`;
-  } else {
-    document.getElementById('u-pic').textContent = me.email[0].toUpperCase();
-  }
+  setAvatar('u-pic', me.profile_pic, me.email);
 }
 
 function uTab(n, btn) {
@@ -829,11 +838,7 @@ async function loadUNotifs() {
 function buildRc() {
   document.getElementById('rc-nm').textContent = me.email.split('@')[0];
   document.getElementById('rc-em').textContent = me.email;
-  if (me.profile_pic) {
-    document.getElementById('rc-pic').outerHTML = `<img class="pcard-pic" id="rc-pic" src="${me.profile_pic}"/>`;
-  } else {
-    document.getElementById('rc-pic').textContent = me.email[0].toUpperCase();
-  }
+  setAvatar('rc-pic', me.profile_pic, me.email);
 }
 
 function rcTab(n, btn) {
@@ -889,11 +894,7 @@ async function loadRcNotifs() {
 function buildAd() {
   document.getElementById('ad-nm').textContent = me.email.split('@')[0];
   document.getElementById('ad-em').textContent = me.email;
-  if (me.profile_pic) {
-    document.getElementById('ad-pic').outerHTML = `<img class="pcard-pic" id="ad-pic" src="${me.profile_pic}"/>`;
-  } else {
-    document.getElementById('ad-pic').textContent = me.email[0].toUpperCase();
-  }
+  setAvatar('ad-pic', me.profile_pic, me.email);
   loadAdUsers();
 }
 
