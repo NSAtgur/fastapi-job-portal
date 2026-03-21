@@ -12,6 +12,7 @@ class UserResponse(BaseModel):
     email:str
     role:str
     is_active:bool
+    profile_pic:str | None=None
 
     class Config:
             model_config = ConfigDict(from_attributes=True)

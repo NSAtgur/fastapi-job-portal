@@ -216,7 +216,7 @@ async def websocket_Endpoint(websocket:WebSocket, db: Session = Depends(get_db))
     except WebSocketDisconnect:
         manager.disconnect(user.id)
 
-@router.post('/profile/upload')
+@router.post('/profile/upload', respone_method = UserResponse)
 async def upload_pic(file: UploadFile = File(...), user = Depends(login_required), db:Session = Depends(get_db)):
 
     if not file.content_type.startswith("image/"):
@@ -244,7 +244,7 @@ async def upload_pic(file: UploadFile = File(...), user = Depends(login_required
     user.profile_pic_public_id = public_id
     db.commit()
     db.refresh(user)
-    
+
     return {
         "message":"Profile picture uploaded successfully",
         "image_url":image_url
