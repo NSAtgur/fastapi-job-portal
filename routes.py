@@ -3,7 +3,7 @@ from database import UsersDB,ApplicationsDB, JobsDB,NotificationsDB, get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from iotype import CreateUser, UserResponse, JobCreate, JobResponse, JobApply, ApplicationResponse, NotificationResponse
+from iotype import CreateUser, UserResponse, JobCreate, JobResponse, JobApply, ApplicationResponse, NotificationResponse, UploadResponse
 from sqlalchemy.orm import Session
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
@@ -216,7 +216,7 @@ async def websocket_Endpoint(websocket:WebSocket, db: Session = Depends(get_db))
     except WebSocketDisconnect:
         manager.disconnect(user.id)
 
-@router.post('/profile/upload', response_model = UserResponse)
+@router.post('/profile/upload', response_model = UploadResponse)
 async def upload_pic(file: UploadFile = File(...), user = Depends(login_required), db:Session = Depends(get_db)):
 
     if not file.content_type.startswith("image/"):
@@ -245,7 +245,4 @@ async def upload_pic(file: UploadFile = File(...), user = Depends(login_required
     db.commit()
     db.refresh(user)
 
-    return {
-        "message":"Profile picture uploaded successfully",
-        "image_url":image_url
-    }
+    return image_url
