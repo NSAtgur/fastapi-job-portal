@@ -234,7 +234,7 @@ async def upload_pic(file: UploadFile = File(...), user = Depends(login_required
         try:
             cloudinary.uploader.destroy(user.profile_pic_public_id)
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail = "Failed to delete old image")
+            pass
         
     result = cloudinary.uploader.upload(file.file)
     image_url = result.get("secure_url")

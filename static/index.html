@@ -95,9 +95,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
 
 /* profile card */
 .pcard{background:var(--bg1);border:1px solid var(--border);padding:18px;}
-.pcard-pic-wrap{position:relative;width:50px;height:50px;margin-bottom:12px;cursor:pointer;}
-.pcard-initials{width:50px;height:50px;background:var(--purple-dim);border:1px solid var(--purple-border);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#a78bfa;background-size:cover;background-position:center;background-repeat:no-repeat;}
-.upload-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:14px;}
+.pcard-pic-wrap{position:relative;width:52px;height:52px;margin-bottom:12px;cursor:pointer;}
+.pcard-initials{width:52px;height:52px;background:var(--purple-dim);border:1px solid var(--purple-border);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#a78bfa;background-size:cover;background-position:center;background-repeat:no-repeat;transition:opacity .2s;}
+.upload-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.65);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:11px;font-weight:600;letter-spacing:.5px;color:#fff;gap:4px;}
+.upload-overlay span{font-size:16px;}
 .pcard-pic-wrap:hover .upload-overlay{opacity:1;}
 #pic-input-u,#pic-input-r,#pic-input-a{display:none;}
 .pname{font-size:13.5px;font-weight:700;margin-bottom:2px;letter-spacing:-.1px;}
@@ -110,8 +111,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
 .sdot{width:6px;height:6px;border-radius:50%;}
 .sdot.on{background:var(--green);box-shadow:0 0 5px rgba(34,197,94,0.6);}
 .sdot.off{background:var(--red);}
-.upload-bar{height:2px;background:var(--border);margin-top:8px;overflow:hidden;display:none;}
-.upload-bar-fill{height:100%;background:var(--purple);transition:width .3s;width:0%;}
+
+/* upload progress — polished */
+.upload-progress{margin-top:10px;display:none;}
+.upload-progress-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:flex;justify-content:space-between;}
+.upload-bar{height:2px;background:var(--border);overflow:hidden;position:relative;}
+.upload-bar-fill{height:100%;width:0%;background:var(--purple);transition:width .35s cubic-bezier(.4,0,.2,1);position:relative;}
+.upload-bar-fill::after{content:'';position:absolute;top:0;right:0;bottom:0;width:60px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));animation:shimmer 1s infinite;}
+@keyframes shimmer{from{transform:translateX(-60px);}to{transform:translateX(60px);}}
 
 /* side nav */
 .snav{background:var(--bg1);border:1px solid var(--border);overflow:hidden;}
@@ -297,10 +304,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
       <div class="pcard">
         <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-u').click()">
           <div class="pcard-initials" id="u-pic">U</div>
-          <div class="upload-overlay">📷</div>
+          <div class="upload-overlay"><span>✂</span>CROP</div>
         </div>
         <input type="file" id="pic-input-u" accept="image/*" onchange="uploadPic(this)"/>
-        <div class="upload-bar" id="u-upload-bar"><div class="upload-bar-fill" id="u-upload-fill"></div></div>
+        <div class="upload-progress" id="u-upload-bar"><div class="upload-progress-label"><span id="u-upload-label">Uploading</span><span id="u-upload-pct">0%</span></div><div class="upload-bar"><div class="upload-bar-fill" id="u-upload-fill"></div></div></div>
         <div class="pname" id="u-nm">—</div>
         <div class="pmail" id="u-em">—</div>
         <span class="rpill user">Job Seeker</span>
@@ -337,10 +344,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
       <div class="pcard">
         <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-r').click()">
           <div class="pcard-initials" id="rc-pic" style="background:var(--amber-dim);border-color:rgba(245,158,11,0.3);color:var(--amber);">R</div>
-          <div class="upload-overlay">📷</div>
+          <div class="upload-overlay"><span>✂</span>CROP</div>
         </div>
         <input type="file" id="pic-input-r" accept="image/*" onchange="uploadPic(this)"/>
-        <div class="upload-bar" id="rc-upload-bar"><div class="upload-bar-fill" id="rc-upload-fill"></div></div>
+        <div class="upload-progress" id="rc-upload-bar"><div class="upload-progress-label"><span id="rc-upload-label">Uploading</span><span id="rc-upload-pct">0%</span></div><div class="upload-bar"><div class="upload-bar-fill" id="rc-upload-fill"></div></div></div>
         <div class="pname" id="rc-nm">—</div>
         <div class="pmail" id="rc-em">—</div>
         <span class="rpill recruiter">Recruiter</span>
@@ -380,10 +387,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
       <div class="pcard">
         <div class="pcard-pic-wrap" onclick="document.getElementById('pic-input-a').click()">
           <div class="pcard-initials" id="ad-pic" style="background:var(--red-dim);border-color:rgba(239,68,68,0.25);color:var(--red);">A</div>
-          <div class="upload-overlay">📷</div>
+          <div class="upload-overlay"><span>✂</span>CROP</div>
         </div>
         <input type="file" id="pic-input-a" accept="image/*" onchange="uploadPic(this)"/>
-        <div class="upload-bar" id="ad-upload-bar"><div class="upload-bar-fill" id="ad-upload-fill"></div></div>
+        <div class="upload-progress" id="ad-upload-bar"><div class="upload-progress-label"><span id="ad-upload-label">Uploading</span><span id="ad-upload-pct">0%</span></div><div class="upload-bar"><div class="upload-bar-fill" id="ad-upload-fill"></div></div></div>
         <div class="pname" id="ad-nm">—</div>
         <div class="pmail" id="ad-em">—</div>
         <span class="rpill admin">Admin</span>
@@ -526,25 +533,38 @@ async function confirmCrop(){
   if(!cropper)return;
   const canvas=cropper.getCroppedCanvas({width:400,height:400,imageSmoothingQuality:'high'});
   closeCrop();
-  // convert canvas to blob and upload
   canvas.toBlob(async blob=>{
     const prefix=_cropPrefix;
     const bar=document.getElementById(`${prefix}-upload-bar`);
     const fill=document.getElementById(`${prefix}-upload-fill`);
-    bar.style.display='block';fill.style.width='30%';
+    const label=document.getElementById(`${prefix}-upload-label`);
+    const pct=document.getElementById(`${prefix}-upload-pct`);
+
+    const setProgress=(p,text)=>{
+      bar.style.display='block';
+      fill.style.width=p+'%';
+      if(pct) pct.textContent=p+'%';
+      if(label&&text) label.textContent=text;
+    };
+
+    setProgress(20,'Uploading');
     const fd=new FormData();
     fd.append('file',blob,'profile.jpg');
     try{
+      setProgress(45,'Uploading');
       const r=await fetch(BASE+'/profile/upload',{method:'POST',headers:{'Authorization':`Bearer ${token}`},body:fd});
-      fill.style.width='80%';
+      setProgress(85,'Processing');
       const d=await r.json();
       if(!r.ok)throw new Error(d.detail||'Upload failed');
-      fill.style.width='100%';
-      setTimeout(()=>{bar.style.display='none';fill.style.width='0%';},600);
+      setProgress(100,'Done');
+      setTimeout(()=>{bar.style.display='none';fill.style.width='0%';},800);
       me.profile_pic=d.image_url;
       setAvatar(`${prefix}-pic`,d.image_url,me.email);
       syncNav();toast('Photo updated','success');
-    }catch(e){bar.style.display='none';fill.style.width='0%';toast(e.message,'error');}
+    }catch(e){
+      bar.style.display='none';fill.style.width='0%';
+      toast(e.message,'error');
+    }
   },'image/jpeg',0.92);
 }
 
