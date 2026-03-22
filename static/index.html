@@ -486,7 +486,7 @@ function doLogout(){
 function setAvatar(id,url,email){
   const el=document.getElementById(id);if(!el)return;
   if(url){
-    el.style.backgroundImage=`url("${url}")`;el.style.backgroundSize='cover';
+    el.style.backgroundImage=`url(${url})`;el.style.backgroundSize='cover';
     el.style.backgroundPosition='center';el.style.backgroundColor='transparent';el.textContent='';
   }else{el.style.backgroundImage='none';el.textContent=email[0].toUpperCase();}
 }

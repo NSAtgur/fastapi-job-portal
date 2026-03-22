@@ -6,6 +6,7 @@ class CreateUser(BaseModel):
     email:str
     password:str
     role:str
+    profile_pic:str| None = None
     class Config:
             model_config = ConfigDict(from_attributes=True)
     
@@ -59,6 +60,6 @@ class NotificationResponse(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
 class UploadResponse(BaseModel):
-    profile_pic:str| None = None
+    image_url:str| None = None
     class Config:
         model_config = ConfigDict(from_attributes = True)
