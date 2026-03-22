@@ -58,7 +58,7 @@ class NotificationResponse(BaseModel):
     class Config:
         model_config = ConfigDict(from_attributes=True)
 
-class UploadResponse:
+class UploadResponse(BaseModel):
     profile_pic:str| None = None
     class Config:
         model_config = ConfigDict(from_attributes = True)
