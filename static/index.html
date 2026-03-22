@@ -677,13 +677,21 @@ async function fetchMe() {
 // ═══════════════════════════════
 // updates avatar circle in place — never replaces the element so click handler stays intact
 function setAvatar(id, url, email) {
+  const wrap = document.getElementById(id)?.parentElement;
+  if (!wrap) return;
   const el = document.getElementById(id);
   if (!el) return;
   if (url) {
-    el.style.cssText += `;background-image:url('${url}');background-size:cover;background-position:center;background-color:transparent;`;
-    el.textContent = '';
+    // Replace initials div with an actual img — simplest and most reliable
+    el.innerHTML = '';
+    el.style.backgroundImage = `url("${url}")`;
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.style.backgroundColor = 'transparent';
+    el.style.border = '2px solid rgba(255,255,255,0.15)';
   } else {
-    el.style.backgroundImage = '';
+    el.style.backgroundImage = 'none';
     el.textContent = email[0].toUpperCase();
   }
 }
