@@ -245,4 +245,4 @@ async def upload_pic(file: UploadFile = File(...), user = Depends(login_required
     db.commit()
     db.refresh(user)
 
-    return image_url
+    return {"image_url":image_url}
