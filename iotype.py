@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict, Any
 
 class CreateUser(BaseModel):
+    name:str
     email:str
     password:str
     role:str
@@ -12,8 +13,10 @@ class CreateUser(BaseModel):
     
 class UserResponse(BaseModel):
     id:int
+    name:str
     email:str
     role:str
+    profile_pic:str| None = None
     is_active:bool
 
     class Config:
@@ -22,6 +25,9 @@ class UserResponse(BaseModel):
 class JobCreate(BaseModel):
     title:str
     company:str
+    salary:int
+    location:str
+    job_type:str
 
     class Config:
         model_config = ConfigDict(from_attributes=True)
@@ -30,6 +36,9 @@ class JobResponse(BaseModel):
     id:int
     title:str
     company:str
+    salary:int
+    location:str
+    job_type:str
     created_at:datetime
 
     class Config:
@@ -38,12 +47,13 @@ class JobResponse(BaseModel):
 
 class JobApply(BaseModel):
     pass
-   
+
     class Config:
         model_config = ConfigDict(from_attributes=True)
 
 
 class ApplicationResponse(BaseModel):
+    user_name:str
     user_id:int
     job_id:int
     status:str

@@ -285,14 +285,42 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
 <!-- REGISTER -->
 <div class="page" id="page-register">
   <div class="auth-outer">
-    <div class="auth-box">
-      <h2>Create account</h2>
-      <p class="auth-sub">Get started with CareerDock</p>
-      <div class="fg"><label>Email</label><input type="email" id="r-em" placeholder="you@company.com"/></div>
-      <div class="fg"><label>Password</label><input type="password" id="r-pw" placeholder="••••••••"/></div>
-      <div class="fg"><label>I am a</label><select id="r-role"><option value="user">Job Seeker</option><option value="recruiter">Recruiter</option></select></div>
-      <button class="abtn" onclick="doRegister()">Create account</button>
-      <div class="auth-foot">Already registered? <a onclick="go('login')">Sign in</a></div>
+    <div class="auth-box" style="max-width:480px;">
+      <h2>Create your account</h2>
+      <p class="auth-sub">Join CareerDock — takes less than a minute</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="fg" style="margin-bottom:0;">
+          <label>First Name</label>
+          <input type="text" id="r-fname" placeholder="John"/>
+        </div>
+        <div class="fg" style="margin-bottom:0;">
+          <label>Last Name</label>
+          <input type="text" id="r-lname" placeholder="Doe"/>
+        </div>
+      </div>
+
+      <div style="height:14px;"></div>
+
+      <div class="fg"><label>Email Address</label><input type="email" id="r-em" placeholder="you@company.com"/></div>
+      <div class="fg">
+        <label>Password</label>
+        <input type="password" id="r-pw" placeholder="Min. 8 characters"/>
+      </div>
+      <div class="fg">
+        <label>I am joining as</label>
+        <select id="r-role">
+          <option value="user">Job Seeker — looking for opportunities</option>
+          <option value="recruiter">Recruiter — hiring talent</option>
+        </select>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border2);padding:12px 14px;margin-bottom:14px;font-size:11.5px;color:var(--text3);line-height:1.6;">
+        By creating an account you agree to CareerDock's terms of service and privacy policy.
+      </div>
+
+      <button class="abtn" onclick="doRegister()">Create Account</button>
+      <div class="auth-foot">Already have an account? <a onclick="go('login')">Sign in</a></div>
     </div>
   </div>
 </div>
@@ -362,11 +390,25 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
     <div class="main">
       <div class="dtab on" id="rct-post">
         <div class="panel">
-          <div class="section-label">Post a Job</div>
-          <div class="irow">
+          <div class="section-label">Post a New Job</div>
+          <div style="max-width:520px;">
             <div class="fg"><label>Job Title</label><input type="text" id="jt" placeholder="e.g. Senior Backend Engineer"/></div>
-            <div class="fg"><label>Company</label><input type="text" id="jc" placeholder="e.g. Acme Inc."/></div>
-            <div class="full"><button class="ibtn" onclick="doPostJob()">Publish Listing</button></div>
+            <div class="fg"><label>Company Name</label><input type="text" id="jc" placeholder="e.g. Acme Inc."/></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="fg" style="margin-bottom:0;"><label>Location</label><input type="text" id="jloc" placeholder="e.g. New York, NY"/></div>
+              <div class="fg" style="margin-bottom:0;"><label>Job Type</label>
+                <select id="jtype">
+                  <option value="full-time">Full-time</option>
+                  <option value="part-time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="internship">Internship</option>
+                  <option value="remote">Remote</option>
+                </select>
+              </div>
+            </div>
+            <div style="height:12px;"></div>
+            <div class="fg"><label>Annual Salary (USD)</label><input type="number" id="jsal" placeholder="e.g. 90000"/></div>
+            <button class="ibtn" style="width:100%;padding:11px;" onclick="doPostJob()">Publish Listing</button>
           </div>
         </div>
       </div>
@@ -413,7 +455,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;padding:0 24px;d
 </div>
 
 <script>
-const BASE=' https://fastapi-job-portal-2.onrender.com';
+const BASE='https://fastapi-job-portal-1.onrender.com';
 let token=localStorage.getItem('cd_tok')||null;
 let me=null;
 const PG={uS:1,uA:1,uN:1,rcJ:1,rcN:1,adU:1,adN:1};
@@ -438,7 +480,7 @@ function gotoDash(){
 function syncNav(){
   const r=document.getElementById('nav-r');
   if(token&&me){
-    r.innerHTML=`<span style="font-size:12px;color:var(--text3);padding:0 6px;">${me.email.split('@')[0]}</span><div class="nav-div"></div><button class="nb" onclick="gotoDash()">Dashboard</button><button class="nb danger" onclick="doLogout()">Sign out</button>`;
+    r.innerHTML=`<span style="font-size:12px;color:var(--text3);padding:0 6px;">${me.name||me.email.split('@')[0]}</span><div class="nav-div"></div><button class="nb" onclick="gotoDash()">Dashboard</button><button class="nb danger" onclick="doLogout()">Sign out</button>`;
   }else{
     r.innerHTML=`<button class="nb" onclick="go('login')">Sign in</button><button class="nb primary" onclick="go('register')">Register</button>`;
   }
@@ -470,12 +512,15 @@ async function doLogin(){
   }catch(e){toast(e.message,'error');}
 }
 async function doRegister(){
+  const fname=document.getElementById('r-fname').value.trim();
+  const lname=document.getElementById('r-lname').value.trim();
   const em=document.getElementById('r-em').value.trim();
   const pw=document.getElementById('r-pw').value;
   const role=document.getElementById('r-role').value;
-  if(!em||!pw)return toast('Fill in all fields','error');
+  if(!fname||!lname||!em||!pw)return toast('Fill in all fields','error');
+  const name=`${fname} ${lname}`;
   try{
-    await api('/register',{method:'POST',body:JSON.stringify({email:em,password:pw,role})});
+    await api('/register',{method:'POST',body:JSON.stringify({name,email:em,password:pw,role})});
     toast('Account created — sign in','success');go('login');
   }catch(e){toast(e.message,'error');}
 }
@@ -486,7 +531,7 @@ function doLogout(){
 function setAvatar(id,url,email){
   const el=document.getElementById(id);if(!el)return;
   if(url){
-    el.style.backgroundImage=`url(${url})`;el.style.backgroundSize='cover';
+    el.style.backgroundImage=`url("${url}")`;el.style.backgroundSize='cover';
     el.style.backgroundPosition='center';el.style.backgroundColor='transparent';el.textContent='';
   }else{el.style.backgroundImage='none';el.textContent=email[0].toUpperCase();}
 }
@@ -576,9 +621,15 @@ function uploadPic(input){
   input.value='';
 }
 function jCard(j){
+  const salary=j.salary?`$${j.salary.toLocaleString()}/yr`:'';
   return`<div class="jcard">
     <div class="jco">${j.company}</div>
     <div class="jtit">${j.title}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+      ${j.location?`<span style="font-size:10.5px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;">📍 ${j.location}</span>`:''}
+      ${j.job_type?`<span style="font-size:10.5px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;">⏱ ${j.job_type}</span>`:''}
+      ${salary?`<span style="font-size:10.5px;color:var(--green);background:var(--green-dim);border:1px solid rgba(34,197,94,0.2);padding:2px 8px;">${salary}</span>`:''}
+    </div>
     <div class="jdate">${new Date(j.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
     <button class="japply" id="ab${j.id}" onclick="applyJob(${j.id},this)">${token?'Apply':'Sign in to apply'}</button>
   </div>`;
@@ -614,11 +665,11 @@ async function hSearch(){
 document.getElementById('hq').addEventListener('keydown',e=>{if(e.key==='Enter')hSearch();});
 
 function buildU(){
-  document.getElementById('u-nm').textContent=me.email.split('@')[0];
+  document.getElementById('u-nm').textContent=me.name||me.email.split('@')[0];
   document.getElementById('u-em').textContent=me.email;
   const s=document.getElementById('u-st');
   s.innerHTML=`<span class="sdot ${me.is_active?'on':'off'}"></span><span>${me.is_active?'Active':'Inactive'}</span>`;
-  setAvatar('u-pic',me.profile_pic,me.email);
+  setAvatar('u-pic',me.profile_pic,me.name||me.email);
 }
 function uTab(n,btn){
   document.querySelectorAll('#page-user .dtab').forEach(t=>t.classList.remove('on'));
@@ -645,7 +696,7 @@ async function loadUApps(){
   try{
     const apps=await api(`/profile/user/applications?skip=${(PG.uA-1)*LIM}&limit=${LIM}`);
     if(!apps.length){el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No applications yet</p></div>`;return;}
-    el.innerHTML=`<table class="tbl"><thead><tr><th>Job ID</th><th>Status</th><th>Applied</th></tr></thead><tbody>${apps.map(a=>`<tr><td>Job #${a.job_id}</td><td><span class="badge blue">${a.status}</span></td><td>${new Date(a.applied_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;
+    el.innerHTML=`<table class="tbl"><thead><tr><th>Applicant</th><th>Job ID</th><th>Status</th><th>Applied</th></tr></thead><tbody>${apps.map(a=>`<tr><td>${a.user_name||'—'}</td><td>Job #${a.job_id}</td><td><span class="badge blue">${a.status}</span></td><td>${new Date(a.applied_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;
     rPagi('u-ap',PG.uA,apps.length===LIM,p=>{PG.uA=p;loadUApps();});
   }catch(e){el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`;}
 }
@@ -657,9 +708,9 @@ async function loadUNotifs(){
   }catch(e){el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`;}
 }
 function buildRc(){
-  document.getElementById('rc-nm').textContent=me.email.split('@')[0];
+  document.getElementById('rc-nm').textContent=me.name||me.email.split('@')[0];
   document.getElementById('rc-em').textContent=me.email;
-  setAvatar('rc-pic',me.profile_pic,me.email);
+  setAvatar('rc-pic',me.profile_pic,me.name||me.email);
 }
 function rcTab(n,btn){
   document.querySelectorAll('#page-recruiter .dtab').forEach(t=>t.classList.remove('on'));
@@ -668,12 +719,19 @@ function rcTab(n,btn){
   if(n==='posts')loadRcJobs();if(n==='notifs')loadRcNotifs();
 }
 async function doPostJob(){
-  const t=document.getElementById('jt').value.trim(),c=document.getElementById('jc').value.trim();
-  if(!t||!c)return toast('Fill in both fields','error');
+  const title=document.getElementById('jt').value.trim();
+  const company=document.getElementById('jc').value.trim();
+  const location=document.getElementById('jloc').value.trim();
+  const job_type=document.getElementById('jtype').value;
+  const salary=parseInt(document.getElementById('jsal').value);
+  if(!title||!company||!location||!salary)return toast('Fill in all fields','error');
   try{
-    const j=await api('/postjob',{method:'POST',body:JSON.stringify({title:t,company:c})});
+    const j=await api('/postjob',{method:'POST',body:JSON.stringify({title,company,location,job_type,salary})});
     toast(`"${j.title}" published`,'success');
-    document.getElementById('jt').value='';document.getElementById('jc').value='';
+    document.getElementById('jt').value='';
+    document.getElementById('jc').value='';
+    document.getElementById('jloc').value='';
+    document.getElementById('jsal').value='';
   }catch(e){toast(e.message,'error');}
 }
 async function loadRcJobs(){
@@ -681,7 +739,7 @@ async function loadRcJobs(){
   try{
     const jobs=await api(`/profile/recruiter/posts?skip=${(PG.rcJ-1)*LIM}&limit=${LIM}`);
     if(!jobs.length){el.innerHTML=`<div class="empty"><div class="ei">○</div><p>No posts yet</p></div>`;return;}
-    el.innerHTML=`<table class="tbl"><thead><tr><th>Title</th><th>Company</th><th>Published</th></tr></thead><tbody>${jobs.map(j=>`<tr><td>${j.title}</td><td>${j.company}</td><td>${new Date(j.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;
+    el.innerHTML=`<table class="tbl"><thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Type</th><th>Salary</th><th>Published</th></tr></thead><tbody>${jobs.map(j=>`<tr><td>${j.title}</td><td>${j.company}</td><td>${j.location||'—'}</td><td>${j.job_type||'—'}</td><td>${j.salary?'$'+j.salary.toLocaleString():'—'}</td><td>${new Date(j.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`;
     rPagi('rc-jp',PG.rcJ,jobs.length===LIM,p=>{PG.rcJ=p;loadRcJobs();});
   }catch(e){el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`;}
 }
@@ -693,9 +751,9 @@ async function loadRcNotifs(){
   }catch(e){el.innerHTML=`<div class="empty"><p>${e.message}</p></div>`;}
 }
 function buildAd(){
-  document.getElementById('ad-nm').textContent=me.email.split('@')[0];
+  document.getElementById('ad-nm').textContent=me.name||me.email.split('@')[0];
   document.getElementById('ad-em').textContent=me.email;
-  setAvatar('ad-pic',me.profile_pic,me.email);
+  setAvatar('ad-pic',me.profile_pic,me.name||me.email);
   loadAdUsers();
 }
 function adTab(n,btn){

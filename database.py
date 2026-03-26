@@ -20,6 +20,7 @@ class UsersDB(Base):
 
     __tablename__ = 'users'
     id = Column(Integer, primary_key = True)
+    name = Column(String,nullable=False)
     email = Column(String, unique = True, index =True)
     password = Column(String)
     profile_pic = Column(String,nullable = True)
@@ -37,6 +38,9 @@ class JobsDB(Base):
     id = Column(Integer, primary_key = True)
     title = Column(String, nullable = False)
     company = Column(String, nullable = False)
+    salary = Column(Integer)
+    location = Column(String)
+    job_type =Column(String)
     created_by = Column(Integer,ForeignKey("users.id"),nullable = False)
     created_at = Column(DateTime, default = datetime.utcnow())
 
@@ -48,6 +52,7 @@ class ApplicationsDB(Base):
 
     __tablename__ = 'applications'
     id = Column(Integer,primary_key= True)
+    user_name = Column(String)
     user_id = Column( Integer, ForeignKey("users.id"))
     job_id = Column( Integer, ForeignKey("jobs.id"))
     applied_at = Column(DateTime,default = datetime.utcnow())

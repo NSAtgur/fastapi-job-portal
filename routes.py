@@ -33,7 +33,7 @@ def register_user(user: CreateUser, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    new_user = UsersDB( email = user.email, password = hashed_password, role = user.role)
+    new_user = UsersDB( name = user.name, email = user.email, password = hashed_password, role = user.role)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -59,13 +59,13 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
 
 @router.post('/postjob', response_model=JobResponse)
 def post_job(job: JobCreate,background_tasks:BackgroundTasks, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
-    new_job = JobsDB(title= job.title, company = job.company, created_by = r.id)
+    new_job = JobsDB(title= job.title, company = job.company,salary=r.salary,location = r.location, job_type=r.job_type, created_by = r.id)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
     users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
     for user in users:
-        background_tasks.add_task(notify,user.id,{"type":"job posted", "job_id":new_job.id, "details":f"{new_job.title} at {new_job.company}"})
+        background_tasks.add_task(notify,user.id,{"type":"job posted", "job_id":new_job.id})
     return new_job
 
 
@@ -94,7 +94,7 @@ def apply(job_id:int, background_tasks:BackgroundTasks, user: UsersDB = Depends(
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
-    background_tasks.add_task(notify, jobs.created_by, {"type":"applied", "user_id":user.id, "message":f"{user.email} has applied for your job"})
+    background_tasks.add_task(notify, jobs.created_by, {"type":"application", "user_id":user.id,"job_id":job_id})
     return new_application
 
 
@@ -141,7 +141,7 @@ def deactivate_user(user_id:int,background_tasks:BackgroundTasks,admin:UsersDB =
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail = " user not found")
     user.is_active = False
     db.commit()
-    background_tasks.add_task(notify, user_id, {"message":" your account has been deactivated by the admin"})
+    background_tasks.add_task(notify, user_id, {"type":"deactivated"})
     return user
 
 @router.patch('/admin/user/activate', response_model =UserResponse)
@@ -157,7 +157,7 @@ def activate_user(user_id:int,background_tasks:BackgroundTasks,  admin:UsersDB =
     user.is_active = True
     db.commit()
     db.refresh(user)
-    background_tasks.add_task(notify,user_id,{"message":"Your account has been activated by the admin "})
+    background_tasks.add_task(notify,user_id,{"type":"activated"})
     return user
     
 @router.get('/admin/user', response_model = UserResponse)

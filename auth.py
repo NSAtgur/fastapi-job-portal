@@ -34,3 +34,7 @@ def recruiter_required(user: UsersDB = Depends(login_required)):
 
 def pagination( skip:int = 0, limit:int = 10):
     return skip,limit
+
+def get_user(user_id:int, db:Session=Depends(get_db)):
+    user= db.query(UsersDB).filter(UsersDB.id == user_id).first()
+    return user
