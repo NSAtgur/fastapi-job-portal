@@ -25,16 +25,18 @@ async def notify(receiver_id:int, data:dict):
 
         elif data["type"] == "activated":
             message = f"Your account has been activated"
-
+        
+        notification = NotificationsDB(user_id = receiver_id, message = message)
+        db.add(notification)
+        db.commit()
+        db.refresh(notification)
+        
         try:
             await manager.send_to_user(receiver_id, message)
         except Exception as e:
             print("WebSocket error:", e)
 
-        notification = NotificationsDB(user_id = receiver_id, message = message)
-        db.add(notification)
-        db.commit()
-        db.refresh(notification)
+        
 
         return notification
     
