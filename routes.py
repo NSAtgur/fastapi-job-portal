@@ -181,7 +181,7 @@ def promote_user(user_id:int, admin: UsersDB= Depends(admin_required), db: Sessi
 @router.get('/profile/notifications', response_model = List[NotificationResponse])
 def notifications(user = Depends(login_required),p=Depends(pagination),  db:Session = Depends(get_db)):
     skip,limit = p
-    notifications = db.query(NotificationsDB).filter(NotificationsDB.user_id == user.id).order_by(desc(NotificationsDB.created_at)).offset(skip).limit(limit).all()
+    notifications = db.query(NotificationsDB).filter(NotificationsDB.user_id == user.id).order_by(NotificationsDB.id.desc()).offset(skip).limit(limit).all()
     return notifications
 
 
