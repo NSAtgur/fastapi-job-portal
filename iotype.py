@@ -63,7 +63,7 @@ class ApplicationResponse(BaseModel):
 
 class NotificationResponse(BaseModel):
     id:int
-    message:Dict[str,Any]
+    message:str
     created_at:datetime
 
     class Config:

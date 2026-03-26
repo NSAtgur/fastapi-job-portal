@@ -4,25 +4,25 @@ from sqlalchemy.orm import Session
 from ws_manager import ConnectionManager, manager
 from auth import get_user
 
-async def notify(receiver_id:int, message:dict):
+async def notify(receiver_id:int, data:dict):
     db = SessionLocal()
-    if "user_id" in message:
-        user= db.query(UsersDB).filter(UsersDB.id == message["user_id"]).first()
+    if "user_id" in data:
+        user= db.query(UsersDB).filter(UsersDB.id == data["user_id"]).first()
     
-    if "job_id" in message:
-        job = db.query(JobsDB).filter(JobsDB.id == message["job_id"]).first()
+    if "job_id" in data:
+        job = db.query(JobsDB).filter(JobsDB.id == data["job_id"]).first()
         print(" notify triggered for job:", job.id)
-    if message["type"] == "application":
+    if data["type"] == "application":
 
         message = f"{user.id} applied for {job.title} at {job.company}"
 
-    elif message["type"] == "job posted":
+    elif data["type"] == "job posted":
         message = f"{job.company} is hiring for {job.title} at {job.location}"
     
-    elif message["type"] == "deactivated":
+    elif data["type"] == "deactivated":
         message = f"Your account has been deactivated"
 
-    elif message["type"] == "activated":
+    elif data["type"] == "activated":
         message = f"Your account has been activated"
 
     try:
