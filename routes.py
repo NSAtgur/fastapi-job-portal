@@ -59,7 +59,7 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
 
 @router.post('/postjob', response_model=JobResponse)
 def post_job(job: JobCreate,background_tasks:BackgroundTasks, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
-    new_job = JobsDB(title= job.title, company = job.company,salary=r.salary,location = r.location, job_type=r.job_type, created_by = r.id)
+    new_job = JobsDB(title= job.title, company = job.company,salary=job.salary,location = job.location, job_type=job.job_type, created_by = r.id)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
