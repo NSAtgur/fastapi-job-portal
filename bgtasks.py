@@ -11,7 +11,7 @@ async def notify(receiver_id:int, message:dict):
     
     if "job_id" in message:
         job = db.query(JobsDB).filter(JobsDB.id == message["job_id"]).first()
-
+        print(" notify triggered for job:", job.id)
     if message["type"] == "application":
 
         message = f"{user.id} applied for {job.title} at {job.company}"
