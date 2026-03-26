@@ -648,7 +648,7 @@ async function applyJob(id,btn){
   }
 }
 async function fetchJobs(title,skip,lim){
-  if(!title)return[];
+  if(title === undefined) return [];
   return await api(`/search?title=${encodeURIComponent(title)}&skip=${skip}&limit=${lim}`);
 }
 async function hSearch(){
