@@ -4,8 +4,13 @@ from database import get_db, UsersDB
 from tokens import verify_token
 from fastapi.security import OAuth2PasswordBearer
 import json
-from config import QUEUE_NAME
 from redis_client import redis_conn
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+QUEUE_NAME=os.getenv("QUEUE_NAME")
 
 
 oauth2schemes = OAuth2PasswordBearer(tokenUrl = '/login')

@@ -4,11 +4,15 @@ from sqlalchemy.orm import Session
 from ws_manager import ConnectionManager, manager
 from auth import get_user
 from redis_client import redis_conn
-from config import QUEUE_NAME
 import json
 import time
 import redis
 import asyncio
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+QUEUE_NAME =os.getenv("QUEUE_NAME")
 
 async def process_task(data:dict):
     db = SessionLocal()
@@ -34,7 +38,7 @@ async def process_task(data:dict):
         
         elif data["type"] == "job deleted":
             message = f"Job posting for {job.title} at {job.company} has been deleted"
-            
+
         notification = NotificationsDB(user_id = data["receiver_id"], message = message)  
         db.add(notification)
         db.commit()
