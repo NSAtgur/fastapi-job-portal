@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from auth import login_required, admin_required, recruiter_required, pagination, push_notifications
 from typing import List
 from ws_manager import ConnectionManager, manager
-from worker import notify
 from sqlalchemy import or_, desc
 from dotenv import load_dotenv
 import os 

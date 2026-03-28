@@ -61,4 +61,6 @@ async def worker():
         data = json.loads(tasks[1])
         await process_task(data)
         
-asyncio.run(worker())
+
+if __name__ == "__main__":
+    asyncio.run(worker())
