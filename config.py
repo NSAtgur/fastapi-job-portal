@@ -1,0 +1,1 @@
+QUEUE_NAME = "notifications_queue"

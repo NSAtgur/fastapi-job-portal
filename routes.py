@@ -1,14 +1,14 @@
-from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, BackgroundTasks,UploadFile,File
+from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect,UploadFile,File
 from database import UsersDB,ApplicationsDB, JobsDB,NotificationsDB, get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
 from iotype import CreateUser, UserResponse, JobCreate, JobResponse, JobApply, ApplicationResponse, NotificationResponse, UploadResponse
 from sqlalchemy.orm import Session
-from auth import login_required, admin_required, recruiter_required, pagination
+from auth import login_required, admin_required, recruiter_required, pagination, push_notifications
 from typing import List
 from ws_manager import ConnectionManager, manager
-from bgtasks import notify
+from worker import notify
 from sqlalchemy import or_, desc
 from dotenv import load_dotenv
 import os 
@@ -39,6 +39,7 @@ def register_user(user: CreateUser, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+
 @router.post('/login')
 def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.email == form_data.username).first()
@@ -57,15 +58,16 @@ def login_user(form_data: OAuth2PasswordRequestForm= Depends(), db: Session = De
         "token_type": "bearer"
     })
 
+
 @router.post('/postjob', response_model=JobResponse)
-def post_job(job: JobCreate,background_tasks:BackgroundTasks, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
+def post_job(job: JobCreate, r: UsersDB = Depends(recruiter_required), db:Session = Depends(get_db)):
     new_job = JobsDB(title= job.title, company = job.company,salary=job.salary,location = job.location, job_type=job.job_type, created_by = r.id)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
     users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
     for user in users:
-        background_tasks.add_task(notify,user.id,{"type":"job posted", "job_id":new_job.id})
+        push_notifications({"receiver_id":user.id, "type":"job posted", "job_id":new_job.id})
     return new_job
 
 
@@ -79,7 +81,7 @@ def search_job(title:str, p = Depends(pagination), db: Session = Depends(get_db)
 
 
 @router.post('/apply/{job_id}', response_model = ApplicationResponse)
-def apply(job_id:int, background_tasks:BackgroundTasks, user: UsersDB = Depends(login_required), db: Session = Depends(get_db)):
+def apply(job_id:int, user: UsersDB = Depends(login_required), db: Session = Depends(get_db)):
 
     jobs = db.query(JobsDB).filter(JobsDB.id == job_id).first()
     
@@ -94,7 +96,7 @@ def apply(job_id:int, background_tasks:BackgroundTasks, user: UsersDB = Depends(
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
-    background_tasks.add_task(notify, jobs.created_by, {"type":"application", "user_id":user.id,"job_id":job_id})
+    push_notifications({"receiver_id":jobs.created_by, "type":"application","user_id":user.id, "job_id":job_id})
     return new_application
 
 
@@ -127,7 +129,18 @@ def recruiter_posts(recruiter: UsersDB = Depends(recruiter_required), p=Depends(
 
     return posts
 
+@router.delete('/profile/recruiter/posts/delete', response_model=JobResponse)
+def delete_jobposts(job_id:int,recruiter:UsersDB=Depends(recruiter_required), db : Session=Depends(get_db)):
+    
+    job = db.query(JobsDB).filter(JobsDB.id == job_id, JobsDB.created_by==recruiter.id ).first()
 
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+    
+    db.delete(job)
+    db.commit()
+    push_notifications({"receiver_id":recruiter.id,"type":"job deleted","job_id":job_id})
+    
 @router.get('/admin/users', response_model = List[UserResponse])
 def get_users(admin: UsersDB = Depends(admin_required),p = Depends(pagination), db: Session= Depends(get_db)):
     skip,limit = p
@@ -135,17 +148,17 @@ def get_users(admin: UsersDB = Depends(admin_required),p = Depends(pagination), 
     return users
 
 @router.patch('/admin/user/deactivate', response_model = UserResponse)
-def deactivate_user(user_id:int,background_tasks:BackgroundTasks,admin:UsersDB = Depends(admin_required), db:Session = Depends(get_db)):
+def deactivate_user(user_id:int,admin:UsersDB = Depends(admin_required), db:Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail = " user not found")
     user.is_active = False
     db.commit()
-    background_tasks.add_task(notify, user_id, {"type":"deactivated"})
+    push_notifications({"receiver_id":user_id,"type":"deactivated"})
     return user
 
 @router.patch('/admin/user/activate', response_model =UserResponse)
-def activate_user(user_id:int,background_tasks:BackgroundTasks,  admin:UsersDB = Depends(admin_required),db: Session = Depends(get_db)):
+def activate_user(user_id:int, admin:UsersDB = Depends(admin_required),db: Session = Depends(get_db)):
     user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
 
     if not user:
@@ -157,7 +170,7 @@ def activate_user(user_id:int,background_tasks:BackgroundTasks,  admin:UsersDB =
     user.is_active = True
     db.commit()
     db.refresh(user)
-    background_tasks.add_task(notify,user_id,{"type":"activated"})
+    push_notifications({"receiver_id":user_id, "type":"activated"})
     return user
     
 @router.get('/admin/user', response_model = UserResponse)
