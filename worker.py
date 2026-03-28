@@ -7,7 +7,6 @@ from redis_client import redis_conn
 import json
 import time
 import redis
-import asyncio
 import os
 from dotenv import load_dotenv
 
@@ -55,12 +54,12 @@ async def process_task(data:dict):
         db.close()
 
 
-async def worker():
+def worker():
     while True:
-        tasks = await redis_conn.brpop(QUEUE_NAME)
+        tasks = redis_conn.brpop(QUEUE_NAME)
         data = json.loads(tasks[1])
-        await process_task(data)
+        process_task(data)
         
 
 if __name__ == "__main__":
-    asyncio.run(worker())
+    worker()
