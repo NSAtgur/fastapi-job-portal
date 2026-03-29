@@ -57,6 +57,6 @@ async def process_notification(data: dict):
 
     except Exception as e:
         print("Notification error:", e)
-
+        db.rollback()
     finally:
         db.close()
