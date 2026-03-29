@@ -3,14 +3,8 @@ from sqlalchemy.orm import Session
 from database import get_db, UsersDB
 from tokens import verify_token
 from fastapi.security import OAuth2PasswordBearer
-import json
-from redis_client import redis_conn
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
 
-QUEUE_NAME=os.getenv("QUEUE_NAME")
 
 
 oauth2schemes = OAuth2PasswordBearer(tokenUrl = '/login')
@@ -47,6 +41,3 @@ def get_user(user_id:int, db:Session=Depends(get_db)):
     user= db.query(UsersDB).filter(UsersDB.id == user_id).first()
     return user
 
-def push_notifications(data:dict):
-    redis_conn.lpush(QUEUE_NAME,json.dumps(data))
-    

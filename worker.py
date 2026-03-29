@@ -1,21 +1,9 @@
 from database import NotificationsDB, SessionLocal, JobsDB, UsersDB
 from ws_manager import manager
-from redis_client import redis_conn
-import json
 import asyncio
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-QUEUE_NAME = os.getenv("QUEUE_NAME")
-
-main_loop = None  # set by main.py at startup
-
-print("Worker started")
 
 
-def process_task(data: dict):
-    print("Processing task:", data)
+async def process_notification(data: dict):
     db = SessionLocal()
     try:
         user = None
@@ -48,7 +36,7 @@ def process_task(data: dict):
 
         receiver_ids = data["receiver_id"]
 
-        # save notifications to DB
+        # save to DB
         if isinstance(receiver_ids, list):
             for user_id in receiver_ids:
                 notification = NotificationsDB(user_id=user_id, message=message)
@@ -58,36 +46,16 @@ def process_task(data: dict):
             notification = NotificationsDB(user_id=receiver_ids, message=message)
             db.add(notification)
             db.commit()
-            db.refresh(notification)
 
-        # send websocket notifications
-        if main_loop and main_loop.is_running():
-            if isinstance(receiver_ids, list):
-                for user_id in receiver_ids:
-                    asyncio.run_coroutine_threadsafe(
-                        manager.send_to_user(user_id, message),
-                        main_loop
-                    )
-            else:
-                future = asyncio.run_coroutine_threadsafe(
-                    manager.send_to_user(receiver_ids, message),
-                    main_loop
-                )
-                try:
-                    future.result(timeout=5)
-                except Exception as e:
-                    print("WebSocket delivery error:", e)
+        # send websocket — no threading needed, already inside event loop
+        if isinstance(receiver_ids, list):
+            for user_id in receiver_ids:
+                await manager.send_to_user(user_id, message)
         else:
-            print("Main event loop not available, skipping WebSocket push")
+            await manager.send_to_user(receiver_ids, message)
+
+    except Exception as e:
+        print("Notification error:", e)
 
     finally:
         db.close()
-
-
-def worker():
-    while True:
-        print("Waiting for Redis task...")
-        tasks = redis_conn.brpop(QUEUE_NAME)
-        data = json.loads(tasks[1])
-        print("Received task:", data)
-        process_task(data)
