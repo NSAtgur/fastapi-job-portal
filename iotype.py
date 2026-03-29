@@ -53,7 +53,7 @@ class JobApply(BaseModel):
 
 
 class ApplicationResponse(BaseModel):
-    user_name:str
+    user_name:str | None = None
     user_id:int
     job_id:int
     status:str
