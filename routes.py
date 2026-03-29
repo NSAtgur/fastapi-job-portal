@@ -139,7 +139,8 @@ def delete_jobposts(job_id:int,recruiter:UsersDB=Depends(recruiter_required), db
     db.delete(job)
     db.commit()
     push_notifications({"receiver_id":recruiter.id,"type":"job deleted","job_id":job_id})
-    
+    return job
+
 @router.get('/admin/users', response_model = List[UserResponse])
 def get_users(admin: UsersDB = Depends(admin_required),p = Depends(pagination), db: Session= Depends(get_db)):
     skip,limit = p

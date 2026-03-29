@@ -10,6 +10,8 @@ import redis
 import os
 from dotenv import load_dotenv
 import asyncio
+main_loop = None  # set by main.py at startup
+
 
 load_dotenv()
 QUEUE_NAME =os.getenv("QUEUE_NAME")
@@ -46,11 +48,17 @@ def process_task(data:dict):
         db.commit()
         db.refresh(notification)
         
-        try:
-            asyncio.run(manager.send_to_user(data["receiver_id"], message))
-        except Exception as e:
-            print("WebSocket error:", e)
-        
+        if main_loop and main_loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(
+                manager.send_to_user(data["receiver_id"], message),
+                main_loop
+            )
+            try:
+                future.result(timeout=5)
+            except Exception as e:
+                print("WebSocket delivery error:", e)
+        else:
+            print("Main event loop not available, skipping WebSocket push")
         return notification
     
     finally:
