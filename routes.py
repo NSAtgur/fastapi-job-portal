@@ -65,8 +65,8 @@ def post_job(job: JobCreate, r: UsersDB = Depends(recruiter_required), db:Sessio
     db.commit()
     db.refresh(new_job)
     users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
-    for user in users:
-        push_notifications({"receiver_id":user.id, "type":"job posted", "job_id":new_job.id})
+    user_ids = [user.id for user in users]
+    push_notifications({"receiver_id": user_ids, "type": "job posted", "job_id": new_job.id})
     return new_job
 
 

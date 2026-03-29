@@ -40,31 +40,45 @@ def process_task(data: dict):
             message = "Your account has been activated"
 
         elif data["type"] == "job deleted":
-            message = f"Job posting for {job.title} at {job.company} has been deleted"
+            message = f"Job posting for {data['job_title']} at {data['job_company']} has been deleted"
 
         else:
             print("Unknown notification type:", data["type"])
             return
 
-        notification = NotificationsDB(user_id=data["receiver_id"], message=message)
-        db.add(notification)
-        db.commit()
-        db.refresh(notification)
+        receiver_ids = data["receiver_id"]
 
-        # Schedule WebSocket send onto the main event loop from this worker thread
+        # save notifications to DB
+        if isinstance(receiver_ids, list):
+            for user_id in receiver_ids:
+                notification = NotificationsDB(user_id=user_id, message=message)
+                db.add(notification)
+            db.commit()
+        else:
+            notification = NotificationsDB(user_id=receiver_ids, message=message)
+            db.add(notification)
+            db.commit()
+            db.refresh(notification)
+
+        # send websocket notifications
         if main_loop and main_loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(
-                manager.send_to_user(data["receiver_id"], message),
-                main_loop
-            )
-            try:
-                future.result(timeout=5)
-            except Exception as e:
-                print("WebSocket delivery error:", e)
+            if isinstance(receiver_ids, list):
+                for user_id in receiver_ids:
+                    asyncio.run_coroutine_threadsafe(
+                        manager.send_to_user(user_id, message),
+                        main_loop
+                    )
+            else:
+                future = asyncio.run_coroutine_threadsafe(
+                    manager.send_to_user(receiver_ids, message),
+                    main_loop
+                )
+                try:
+                    future.result(timeout=5)
+                except Exception as e:
+                    print("WebSocket delivery error:", e)
         else:
             print("Main event loop not available, skipping WebSocket push")
-
-        return notification
 
     finally:
         db.close()
