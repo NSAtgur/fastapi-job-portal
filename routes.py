@@ -97,7 +97,7 @@ def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depend
     if existing_application:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already applied")
 
-    new_application = ApplicationsDB(user_id=user.id, job_id=job_id, status="applied")
+    new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id, status="applied")
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
