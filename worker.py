@@ -14,7 +14,9 @@ import asyncio
 load_dotenv()
 QUEUE_NAME =os.getenv("QUEUE_NAME")
 
+print("Worker started")
 def process_task(data:dict):
+    print("Processing tasks")
     db = SessionLocal()
     try:
         if "user_id" in data:    ## user_id for mentioning details in the name 
@@ -57,8 +59,10 @@ def process_task(data:dict):
 
 def worker():
     while True:
+        print("Waiting for redis")
         tasks = redis_conn.brpop(QUEUE_NAME)
         data = json.loads(tasks[1])
+        print("calling processor")
         process_task(data)
         
 

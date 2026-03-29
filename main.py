@@ -7,6 +7,8 @@ import threading
 
 app = FastAPI()
 
+print("app started")
+
 origins = ["https://careerdock-app.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
@@ -19,4 +21,5 @@ app.include_router(router)
 
 @app.on_event("startup")
 def startup_event():
+    print("Starting the thread")
     threading.Thread(target=worker, daemon=True).start()
