@@ -4,6 +4,7 @@ import asyncio
 
 
 async def process_notification(data: dict):
+    print("process_notification called with:", data)  # ← add this
     db = SessionLocal()
     try:
         user = None
