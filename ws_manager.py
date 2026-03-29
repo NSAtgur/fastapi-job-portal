@@ -8,7 +8,6 @@ class ConnectionManager:
 
 
     async def connect(self, user_id, websocket:WebSocket):
-        await websocket.accept()
         self.active_connections[user_id]= websocket
 
 
