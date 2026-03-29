@@ -54,12 +54,10 @@ async def process_task(data:dict):
         db.close()
 
 
-def worker():
+async def worker():
     while True:
         tasks = redis_conn.brpop(QUEUE_NAME)
         data = json.loads(tasks[1])
-        process_task(data)
+        await process_task(data)
         
 
-if __name__ == "__main__":
-    worker()
