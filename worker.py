@@ -9,11 +9,12 @@ import time
 import redis
 import os
 from dotenv import load_dotenv
+import asyncio
 
 load_dotenv()
 QUEUE_NAME =os.getenv("QUEUE_NAME")
 
-async def process_task(data:dict):
+def process_task(data:dict):
     db = SessionLocal()
     try:
         if "user_id" in data:    ## user_id for mentioning details in the name 
@@ -44,7 +45,7 @@ async def process_task(data:dict):
         db.refresh(notification)
         
         try:
-            await manager.send_to_user(data["receiver_id"], message)
+            asyncio.run(manager.send_to_user(data["receiver_id"], message))
         except Exception as e:
             print("WebSocket error:", e)
         
@@ -54,10 +55,10 @@ async def process_task(data:dict):
         db.close()
 
 
-async def worker():
+def worker():
     while True:
         tasks = redis_conn.brpop(QUEUE_NAME)
         data = json.loads(tasks[1])
-        await process_task(data)
+        process_task(data)
         
 

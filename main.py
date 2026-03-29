@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from routes import router
 from fastapi.middleware.cors import  CORSMiddleware
-import asyncio
 from worker import worker
+import threading 
+
 
 app = FastAPI()
 
@@ -17,5 +18,5 @@ app.add_middleware(
 app.include_router(router)
 
 @app.on_event("startup")
-async def start_worker():
-    asyncio.create_task(worker())
+def startup_event():
+    threading.Thread(target=worker, daemon=True).start()
