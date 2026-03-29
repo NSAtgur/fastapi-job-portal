@@ -7,8 +7,13 @@ from datetime import datetime
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,      # tests connection before using it
+    pool_recycle=300,        # recycles connections every 5 minutes
+    pool_size=5,
+    max_overflow=10
+)
 Base = declarative_base()
 SessionLocal = sessionmaker(
     autocommit=False,
