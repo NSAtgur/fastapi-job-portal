@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -23,6 +26,7 @@ def verify_token(token:str):
         payload = jwt.decode(token, SECRET_KEY, algorithms = [ALGORITHM])
         return payload
     except JWTError:
+        logger.exception("Token verification failed")
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = " Invalid token")
 
 

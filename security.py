@@ -5,3 +5,4 @@ def generate_password_hash(password:str)->str:
 
 def verify_password_hash(password:str, hashed:str)->bool:
     return argon2.verify(password, hashed)
+

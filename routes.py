@@ -15,17 +15,28 @@ from worker import process_notification
 from PIL import Image
 import cloudinary
 import cloudinary.uploader
+from pydantic import BaseModel, CongfigDict
+import logging
 
 router = APIRouter()
 load_dotenv()
+
+tasks = []
 
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
+logger = logging.getLogger(__name__)
+
+
 
 @router.post('/register', response_model=UserResponse)
-def register_user(user: CreateUser, db: Session = Depends(get_db)):
+def register_user(
+            user: CreateUser,
+            db: Session = Depends(get_db
+            )):
+    
     existing_user = db.query(UsersDB).filter(UsersDB.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already registered")
@@ -38,11 +49,15 @@ def register_user(user: CreateUser, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    logger.info("User %s registered", new_user.name)
     return new_user
 
 
 @router.post('/login')
-def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_user(
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: Session = Depends(get_db)
+        ):
     user = db.query(UsersDB).filter(UsersDB.email == form_data.username).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -61,11 +76,19 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 
 
 @router.post('/postjob', response_model=JobResponse)
-def post_job(job: JobCreate, background_tasks: BackgroundTasks, r: UsersDB = Depends(recruiter_required), db: Session = Depends(get_db)):
+def post_job(
+        job: JobCreate,
+        background_tasks: BackgroundTasks, 
+        r: UsersDB = Depends(recruiter_required), 
+        db: Session = Depends(get_db)
+        ):
+    
     new_job = JobsDB(title=job.title, company=job.company, salary=job.salary, location=job.location, job_type=job.job_type, created_by=r.id)
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
+
+    logger.info("User %s posted new job", r.name, new_job.title)
 
     users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
     user_ids = [user.id for user in users]
@@ -80,7 +103,11 @@ def post_job(job: JobCreate, background_tasks: BackgroundTasks, r: UsersDB = Dep
 
 
 @router.get('/search', response_model=List[JobResponse])
-def search_job(title: str, p=Depends(pagination), db: Session = Depends(get_db)):
+def search_job(
+    title: str, 
+    p=Depends(pagination), 
+    db: Session = Depends(get_db)
+    ):
     skip, limit = p
     jobs = db.query(JobsDB).filter(or_(JobsDB.title.ilike(f"%{title}%"))).offset(skip).limit(limit).all()
     return jobs
@@ -101,7 +128,8 @@ def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depend
     db.add(new_application)
     db.commit()
     db.refresh(new_application)
-
+    
+    logger.info(f"{user.name} applied for {job.title}")
     background_tasks.add_task(process_notification, {
         "receiver_id": job.created_by,
         "type": "application",
@@ -155,6 +183,8 @@ def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recruiter: U
     db.delete(job)
     db.commit()
 
+    logger.info("User %s deleted the job posting", recruiter.name, job.title)
+
     background_tasks.add_task(process_notification, {
         "receiver_id": recruiter.id,
         "type": "job deleted",
@@ -180,6 +210,8 @@ def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin: User
     user.is_active = False
     db.commit()
 
+    logger.info("Admin deactivated user %s", user.name)
+
     background_tasks.add_task(process_notification, {
         "receiver_id": user_id,
         "type": "deactivated"
@@ -201,6 +233,8 @@ def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersD
     user.is_active = True
     db.commit()
     db.refresh(user)
+    
+    logger.info("User %s activated successful", user.name)
 
     background_tasks.add_task(process_notification, {
         "receiver_id": user_id,
@@ -260,11 +294,13 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
         return
 
     await manager.connect(user.id, websocket)
-
+    
     try:
         while True:
             await websocket.receive_text()
+            logger.info("Message is sent")
     except WebSocketDisconnect:
+        logger.exception("WS error")
         manager.disconnect(user.id)
 
 
@@ -295,5 +331,22 @@ async def upload_pic(file: UploadFile = File(...), user=Depends(login_required),
     user.profile_pic_public_id = public_id
     db.commit()
     db.refresh(user)
-
+    logger.info("Profile pic uploaded")
     return {"image_url": image_url}
+
+class UserInfo(BaseModel):
+    id:int
+    name:str
+    email:str
+
+@router.post('/users',response_model=UserInfo)
+def get_userinfo(name:str, email:str, db:Session = Depends(get_db)):
+    user = db.query(UsersDB).filter(UsersDB.name==name and UsersDB.email==email).first()
+    if not user:
+        new_user= UsersDB(name=name, email=email)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        return new_user
+    

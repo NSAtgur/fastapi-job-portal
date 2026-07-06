@@ -1,7 +1,9 @@
 from database import NotificationsDB, SessionLocal, JobsDB, UsersDB
 from ws_manager import manager
 import asyncio
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def process_notification(data: dict):
     print("process_notification called with:", data)  # ← add this
@@ -56,7 +58,7 @@ async def process_notification(data: dict):
             await manager.send_to_user(receiver_ids, message)
 
     except Exception as e:
-        print("Notification error:", e)
+        logger.exception("Background_task worker failed")
         db.rollback()
         
     finally:
