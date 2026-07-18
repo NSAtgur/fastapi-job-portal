@@ -50,10 +50,11 @@ class Projects(Base):
 
     id:Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"), nullable= False, index= True)
-    title:Mapped[str] = mapped_column(String(30), nullable= False)
-    description:Mapped[str] = mapped_column(String(100), nullable= False)
-    github_link:Mapped[str] = mapped_column(String(30), nullable= False)
+    title:Mapped[str] = mapped_column(String(30), nullable= True)
+    description:Mapped[str] = mapped_column(String(100), nullable= True)
+    github_link:Mapped[str] = mapped_column(String(30), nullable= True)
     live_url:Mapped[str] = mapped_column(String(30), nullable= True)
+    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
 
     user = relationship("UsersDB", back_populates= "projects")
     
@@ -78,7 +79,7 @@ class Experience(Base):
     contribution:Mapped[str] = mapped_column(String(100), nullable= True)
     currently_working:Mapped[bool] = mapped_column(Boolean, default = True)
     skills_used:Mapped[str] = mapped_column(String(100), nullable = True)
-    updated_at:Mapped[str] = mapped_column(DateTime, default= datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
     
     user = relationship("UsersDB", back_populates= "experiences")
 
@@ -106,7 +107,7 @@ class UserSkills(Base):
     id:Mapped[int] = mapped_column(Integer, primary_key= True)
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     skill_id:Mapped[int] = mapped_column(Integer, ForeignKey("skills.id"))
-    updated_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
 
     user = relationship("UsersDB", back_populates="userskills")
     skills = relationship("Skills", back_populates="userskills")
@@ -164,12 +165,12 @@ class Socials(Base):
     
     id:Mapped[int] = mapped_column(Integer, primary_key= True)
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index = True)
-    github_profile_url:Mapped[str] = mapped_column(String(50))
-    linkedin_profile_url:Mapped[str] = mapped_column(String(50))
-    leetcode_prfile_url:Mapped[str] = mapped_column(String(50))
-    codeforces_profile_url:Mapped[str] = mapped_column(String(50))
-    portfolio_profile_url:Mapped[str] = mapped_column(String(50))
-    updated_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
+    github_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    linkedin_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    leetcode_prfile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    codeforces_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    portfolio_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    created_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
 
 
     user = relationship("UsersDB", back_populates="socials")
