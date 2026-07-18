@@ -96,25 +96,28 @@ async def post_job(
         db.add(new_job)
         await db.commit()
         await db.refresh(new_job)
+        result = await db.execute(select(UsersDB).where(UsersDB.role == "user", UsersDB.is_active == True))
+        users = result.scalars().all()
+        user_ids = [user.id for user in users]
+
+        background_tasks.add_task(process_notification, {
+            "receiver_id": user_ids,
+            "type": "job posted",
+            "job_id": new_job.id
+        })
+        
+        logger.info("User %s posted new job", r.name, new_job.title)
+
+
+        return new_job
 
     except Exception:
         await db.rollback()
         logger.exception("DB failed to add %s job", job.title)
+        raise
 
-    logger.info("User %s posted new job", r.name, new_job.title)
 
-    result = await db.execute(select(UsersDB).where(UsersDB.role == "user", UsersDB.is_active == True))
-    users = result.scalars().all()
-    user_ids = [user.id for user in users]
-
-    background_tasks.add_task(process_notification, {
-        "receiver_id": user_ids,
-        "type": "job posted",
-        "job_id": new_job.id
-    })
-
-    return new_job
-
+    
 
 @router.get('/search', response_model=List[JobResponse])
 async def search_job(
