@@ -11,10 +11,11 @@ logging.basicConfig(
     format = "%(asctime)s %(levelname)s %(name)s %(message)s"
 )
 
-origins = ["https://careerdock-app.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "https://careerdock-app.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
