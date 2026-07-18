@@ -58,7 +58,7 @@ async def register_user(
     except Exception:
         await db.rollback()
         logger.exception("Failed to register %s user", user.name)
-
+        raise
 
 @router.post('/login')
 async def login_user(
@@ -160,7 +160,7 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
     except Exception:
         await db.rollback()
         logger.exception("DB failed to insert new application")
-    
+        raise
 
 
     
@@ -199,6 +199,7 @@ async def add_experience(
     except Exception:
         await db.rollback()
         logger.exception("Unable to add experience")
+        raise
 
 
 @router.put('/me/experience/{experience_id}', response_model= ExperienceResponse)
