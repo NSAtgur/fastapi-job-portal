@@ -27,8 +27,8 @@ class UsersDB(Base):
     profile_pic:Mapped[str] = mapped_column(String(100), nullable= True)
     experience_years:Mapped[int] = mapped_column(Integer, nullable= True)
     bio:Mapped[str] = mapped_column(String(500), nullable= True)
-    headline:Mapped[str] = mapped_column(String(500), nullable= False)
-    education:Mapped[str] = mapped_column(String(50), nullable=False)
+    headline:Mapped[str] = mapped_column(String(500), nullable= True)
+    education:Mapped[str] = mapped_column(String(50), nullable=True)
     created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
 
 
