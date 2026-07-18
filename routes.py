@@ -267,7 +267,7 @@ async def delete_experience(
         if not user_exp:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "user experience not found")
         
-        await db.delete(user_exp)
+        db.delete(user_exp)
         await db.commit()
 
         return Response(status_code= status.HTTP_204_NO_CONTENT)
@@ -367,7 +367,7 @@ async def delete_project(
         if not user_project:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Project not found")
         
-        await db.delete(user_project)
+        db.delete(user_project)
         await db.commit()
 
         logger.info("Deleted %s user %s project", user.id, project_id)
@@ -517,7 +517,7 @@ async def delete_socials(
                 status_code= status.HTTP_404_NOT_FOUND,
                 detail="Socials link not found"
             )
-        await db.delete(user_social)
+        db.delete(user_social)
         await db.commit()
 
         logger.info("Deleted %s social for %s user", social_id, user.id)
@@ -698,7 +698,7 @@ async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recrui
     job_title = job.title
     job_company = job.company
     try: 
-        await db.delete(job)
+        db.delete(job)
         await db.commit()
 
     except Exception:
