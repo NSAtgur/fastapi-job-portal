@@ -81,6 +81,7 @@ class ProfileUpdate(BaseModel):
     bio:str| None = None
     headline:str| None = None
     education:str| None = None
+    experience_years:int | None = None
     
     model_config = ConfigDict(from_attributes = True)
 

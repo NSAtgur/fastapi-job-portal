@@ -18,6 +18,7 @@ from PIL import Image
 import cloudinary
 import cloudinary.uploader
 import logging
+from datetime import datetime
 
 router = APIRouter()
 load_dotenv()
@@ -199,7 +200,17 @@ async def add_experience(
         await db.refresh(new_experience)
         logger.info("New experience added")
 
-        return new_experience
+        return ExperienceResponse(
+            id=new_experience.id,
+            organization_name=new_experience.organization_name,
+            role=new_experience.role,
+            start_date=new_experience.start_date,
+            end_date=new_experience.end_date,
+            contribution=new_experience.contribution,
+            currently_working=new_experience.currently_working,
+            skills_used=new_experience.skills_used,
+            created_at=new_experience.created_at or datetime.utcnow(),
+        )
     
     except Exception:
         await db.rollback()
@@ -233,7 +244,17 @@ async def update_experience(
         await db.refresh(user_exp)
 
         logger.info("Updated experience")
-        return user_exp
+        return ExperienceResponse(
+            id=user_exp.id,
+            organization_name=user_exp.organization_name,
+            role=user_exp.role,
+            start_date=user_exp.start_date,
+            end_date=user_exp.end_date,
+            contribution=user_exp.contribution,
+            currently_working=user_exp.currently_working,
+            skills_used=user_exp.skills_used,
+            created_at=user_exp.created_at or datetime.utcnow(),
+        )
     except Exception:
         await db.rollback()
         logger.exception("DB error")
@@ -251,8 +272,21 @@ async def get_experience(
 
         if not user_exp:
             return []
-        
-        return user_exp
+
+        return [
+            ExperienceResponse(
+                id=exp.id,
+                organization_name=exp.organization_name,
+                role=exp.role,
+                start_date=exp.start_date,
+                end_date=exp.end_date,
+                contribution=exp.contribution,
+                currently_working=exp.currently_working,
+                skills_used=exp.skills_used,
+                created_at=exp.created_at or datetime.utcnow(),
+            )
+            for exp in user_exp
+        ]
     
     except Exception:
         await db.rollback()
@@ -296,7 +330,17 @@ async def get_projects(user:UsersDB = Depends(login_required),p = Depends(pagina
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Projects not found")
         
         logger.info("Fetched the projects for %s user", user.id)
-        return projects
+        return [
+            ProjectResponse(
+                id=project.id,
+                title=project.title,
+                description=project.description,
+                github_link=project.github_link,
+                live_url=project.live_url,
+                created_at=project.created_at or datetime.utcnow(),
+            )
+            for project in projects
+        ]
     except Exception:
         logger.exception("DB error")
         raise
@@ -322,7 +366,14 @@ async def add_project(
         await db.refresh(new_project)
         logger.info("Added new project for %s user", user.id)
 
-        return new_project
+        return ProjectResponse(
+            id=new_project.id,
+            title=new_project.title,
+            description=new_project.description,
+            github_link=new_project.github_link,
+            live_url=new_project.live_url,
+            created_at=new_project.created_at or datetime.utcnow(),
+        )
     except Exception:
         await db.rollback()
         logger.exception("DB error")
@@ -352,7 +403,14 @@ async def update_project(
         await db.refresh(user_project)
 
         logger.info("Updated % user project %s", user.id, project_id)
-        return user_project
+        return ProjectResponse(
+            id=user_project.id,
+            title=user_project.title,
+            description=user_project.description,
+            github_link=user_project.github_link,
+            live_url=user_project.live_url,
+            created_at=user_project.created_at or datetime.utcnow(),
+        )
     
     except Exception:
         await db.rollback()
@@ -386,6 +444,7 @@ async def delete_project(
         raise
 
 
+
 #Routes for skills GET, POST
 @router.get('/me/skills', response_model= List[SkillResponse])
 async def get_skills(
@@ -402,7 +461,14 @@ async def get_skills(
                 status_code= status.HTTP_404_NOT_FOUND,
                 detail = "Skills not added"
             )
-        return [mapping.skills for mapping in user_skills]
+        return [
+            SkillResponse(
+                id=mapping.skill_id,
+                skill_name=mapping.skills.skill_name,
+                created_at=mapping.created_at or datetime.utcnow(),
+            )
+            for mapping in user_skills
+        ]
     
     except Exception:
         logger.exception("DB error")
@@ -443,11 +509,11 @@ async def add_skills(
 
         logger.info("Added skill for %s user", user.id)
         
-        return {
-            "id":skill.skill_id,
-            "user_id":skill.user_id,
-            "skill_name":skill.skills.skill_name
-        }
+        return SkillResponse(
+            id=skill.skill_id,
+            skill_name=user_skill.skill_name,
+            created_at=skill.created_at or datetime.utcnow(),
+        )
     
     except Exception:
         await db.rollback()

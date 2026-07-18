@@ -167,7 +167,7 @@ class Socials(Base):
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index = True)
     github_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     linkedin_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    leetcode_prfile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    leetcode_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     codeforces_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     portfolio_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     created_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
