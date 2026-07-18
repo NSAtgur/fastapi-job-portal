@@ -21,6 +21,7 @@ class UsersDB(Base):
     name:Mapped[str] = mapped_column(String(15), unique = True, nullable = False)
     email:Mapped[str] = mapped_column(String(25), unique = True, nullable = False)
     password:Mapped[str] = mapped_column(String(200), nullable= False)
+    role:Mapped[str] = mapped_column(String,nullable= False)
     is_active:Mapped[bool] = mapped_column(Boolean, default= True)
     is_verified:Mapped[bool] = mapped_column(Boolean, default = False, nullable=True)
     profile_pic:Mapped[str] = mapped_column(String(100), nullable= True)
