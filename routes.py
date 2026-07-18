@@ -701,21 +701,22 @@ async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recrui
     try: 
         db.delete(job)
         await db.commit()
+        logger.info("User %s deleted the job posting", recruiter.name, job.title)
+
+        background_tasks.add_task(process_notification, {
+            "receiver_id": recruiter.id,
+            "type": "job deleted",
+            "job_title": job_title,
+            "job_company": job_company
+        })
+ 
+        return job
 
     except Exception:
         await db.rollback()
         logger.exception("Failed to delete %s job", job_id)
 
-    logger.info("User %s deleted the job posting", recruiter.name, job.title)
 
-    background_tasks.add_task(process_notification, {
-        "receiver_id": recruiter.id,
-        "type": "job deleted",
-        "job_title": job_title,
-        "job_company": job_company
-    })
-
-    return job
 
 
 @router.get('/admin/users', response_model=List[UserResponse])
@@ -736,18 +737,20 @@ async def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin
         user.is_active = False
         await db.commit()
         logger.info("Admin deactivated user %s", user.name)
+        background_tasks.add_task(process_notification, {
+        "receiver_id": user_id,
+        "type": "deactivated"
+        })
+
+        return user
 
     
     except Exception:
         logger.exception("Failed to deactivate %s user", user.name)
+        raise
 
 
-    background_tasks.add_task(process_notification, {
-        "receiver_id": user_id,
-        "type": "deactivated"
-    })
-
-    return user
+    
 
 
 @router.patch('/admin/user/activate', response_model=UserResponse)
@@ -765,19 +768,20 @@ async def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: 
         await db.commit()
         await db.refresh(user)
         logger.info("User %s activated successful", user.name)
+        background_tasks.add_task(process_notification, {
+        "receiver_id": user_id,
+        "type": "activated"
+        })
 
+        return user
     
     except Exception:
         await db.rollback()
         logger.exception("Failed to activate %s user", user.name)
+        raise
     
 
-    background_tasks.add_task(process_notification, {
-        "receiver_id": user_id,
-        "type": "activated"
-    })
 
-    return user
 
 
 @router.get('/admin/user', response_model=UserResponse)
@@ -843,6 +847,7 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
     except WebSocketDisconnect:
         logger.exception("WS error")
         manager.disconnect(user.id)
+        raise
 
 
 @router.post('/profile/upload', response_model=UploadResponse)
@@ -874,11 +879,12 @@ async def upload_pic(file: UploadFile = File(...), user=Depends(login_required),
         await db.commit()
         await db.refresh(user)
         logger.info("Profile pic uploaded")
+        return {"image_url": image_url}
 
     except Exception:
         await db.rollback()
         logger.exception("DB failed")
-    return {"image_url": image_url}
+        raise
 
 
 
