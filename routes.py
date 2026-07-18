@@ -53,11 +53,11 @@ async def register_user(
         await db.commit()
         await db.refresh(new_user)
         logger.info("User %s registered", new_user.name)
-    
+        return new_user
+
     except Exception:
         await db.rollback()
         logger.exception("Failed to register %s user", user.name)
-    return new_user
 
 
 @router.post('/login')
@@ -124,11 +124,11 @@ async def search_job(
     try:
         results = await db.execute(select(JobsDB).where(or_(JobsDB.title.ilike(f"%{title}%"))).offset(skip).limit(limit))
         jobs = results.scalars().all()
-    
+        return jobs
+
     except Exception:
         logger.exception("Job %s not found", title)
         raise
-    return jobs
 
 
 @router.post('/apply/{job_id}', response_model=ApplicationResponse)
@@ -148,20 +148,22 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
         db.add(new_application)
         await db.commit()
         await db.refresh(new_application)
+        logger.info(f"{user.name} applied for {job.title}")
+        background_tasks.add_task(process_notification, {
+            "receiver_id": job.created_by,
+            "type": "application",
+            "user_id": user.id,
+            "job_id": job_id
+        })
+        return new_application
 
     except Exception:
         await db.rollback()
         logger.exception("DB failed to insert new application")
     
-    logger.info(f"{user.name} applied for {job.title}")
-    background_tasks.add_task(process_notification, {
-        "receiver_id": job.created_by,
-        "type": "application",
-        "user_id": user.id,
-        "job_id": job_id
-    })
 
-    return new_application
+
+    
 
 
 @router.get('/users/me/profile', response_model=UserResponse)
