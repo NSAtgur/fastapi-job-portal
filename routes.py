@@ -1,21 +1,22 @@
-from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks
-from database import UsersDB, ApplicationsDB, JobsDB, NotificationsDB, get_db
+from fastapi import Depends, HTTPException, status, APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, Response
+from models import UsersDB, ApplicationsDB, JobsDB, NotificationsDB, Experience, Skills, UserSkills, Socials, Projects
+from database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from iotype import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse
-from sqlalchemy.orm import Session
+from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
 from ws_manager import manager
-from sqlalchemy import or_
+from sqlalchemy import or_,select
+from sqlalchemy.orm import selectinload
 from dotenv import load_dotenv
 import os
 from worker import process_notification
 from PIL import Image
 import cloudinary
 import cloudinary.uploader
-from pydantic import BaseModel, CongfigDict
 import logging
 
 router = APIRouter()
@@ -32,33 +33,39 @@ logger = logging.getLogger(__name__)
 
 
 @router.post('/register', response_model=UserResponse)
-def register_user(
+async def register_user(
             user: CreateUser,
-            db: Session = Depends(get_db
+            db: AsyncSession = Depends(get_db
             )):
     
-    existing_user = db.query(UsersDB).filter(UsersDB.email == user.email).first()
+    result = await db.execute( select(UsersDB).where(UsersDB.email == user.email))
+    existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already registered")
     try:
         hashed_password = generate_password_hash(user.password)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    try:
 
-    new_user = UsersDB(name=user.name, email=user.email, password=hashed_password, role=user.role)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    logger.info("User %s registered", new_user.name)
+        new_user = UsersDB(name=user.name, email=user.email, password=hashed_password, role=user.role)
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+        logger.info("User %s registered", new_user.name)
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to register %s user", user.name)
     return new_user
 
 
 @router.post('/login')
-def login_user(
+async def login_user(
         form_data: OAuth2PasswordRequestForm = Depends(),
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
         ):
-    user = db.query(UsersDB).filter(UsersDB.email == form_data.username).first()
+    user = await db.execute(select(UsersDB).where(UsersDB.email == form_data.username)).scalars().first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -75,22 +82,27 @@ def login_user(
     }
 
 
-@router.post('/postjob', response_model=JobResponse)
-def post_job(
+@router.post('/job', response_model=JobResponse)
+async def post_job(
         job: JobCreate,
         background_tasks: BackgroundTasks, 
         r: UsersDB = Depends(recruiter_required), 
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
         ):
-    
-    new_job = JobsDB(title=job.title, company=job.company, salary=job.salary, location=job.location, job_type=job.job_type, created_by=r.id)
-    db.add(new_job)
-    db.commit()
-    db.refresh(new_job)
+    try: 
+        new_job = JobsDB(title=job.title, company=job.company, salary=job.salary, location=job.location, job_type=job.job_type, created_by=r.id)
+        db.add(new_job)
+        await db.commit()
+        await db.refresh(new_job)
+
+    except Exception:
+        await db.rollback()
+        logger.exception("DB failed to add %s job", job.title)
 
     logger.info("User %s posted new job", r.name, new_job.title)
 
-    users = db.query(UsersDB).filter(UsersDB.role == "user", UsersDB.is_active == True).all()
+    result = await db.execute(select(UsersDB).where(UsersDB.role == "user", UsersDB.is_active == True))
+    users = result.scalars().all()
     user_ids = [user.id for user in users]
 
     background_tasks.add_task(process_notification, {
@@ -103,31 +115,43 @@ def post_job(
 
 
 @router.get('/search', response_model=List[JobResponse])
-def search_job(
+async def search_job(
     title: str, 
     p=Depends(pagination), 
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
     ):
     skip, limit = p
-    jobs = db.query(JobsDB).filter(or_(JobsDB.title.ilike(f"%{title}%"))).offset(skip).limit(limit).all()
+    try:
+        results = await db.execute(select(JobsDB).where(or_(JobsDB.title.ilike(f"%{title}%"))).offset(skip).limit(limit))
+        jobs = results.scalars().all()
+    
+    except Exception:
+        logger.exception("Job %s not found", title)
+        raise
     return jobs
 
 
 @router.post('/apply/{job_id}', response_model=ApplicationResponse)
-def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depends(login_required), db: Session = Depends(get_db)):
-    job = db.query(JobsDB).filter(JobsDB.id == job_id).first()
+async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depends(login_required), db: AsyncSession = Depends(get_db)):
+    job_result = await db.execute(select(JobsDB).where(JobsDB.id == job_id))
+    job = job_result.scalar_one_or_none()
 
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
 
-    existing_application = db.query(ApplicationsDB).filter(ApplicationsDB.user_id == user.id, ApplicationsDB.job_id == job_id).first()
+    application_result = await db.execute(select(ApplicationsDB).where(ApplicationsDB.user_id == user.id, ApplicationsDB.job_id == job_id))
+    existing_application = application_result.scalar_one_or_none()
     if existing_application:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already applied")
+    try:
+        new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id, status="applied")
+        db.add(new_application)
+        await db.commit()
+        await db.refresh(new_application)
 
-    new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id, status="applied")
-    db.add(new_application)
-    db.commit()
-    db.refresh(new_application)
+    except Exception:
+        await db.rollback()
+        logger.exception("DB failed to insert new application")
     
     logger.info(f"{user.name} applied for {job.title}")
     background_tasks.add_task(process_notification, {
@@ -140,38 +164,530 @@ def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depend
     return new_application
 
 
-@router.get('/profile/user', response_model=UserResponse)
-def user_profile(user: UsersDB = Depends(login_required)):
+@router.get('/users/me/profile', response_model=UserResponse)
+async def user_profile(user: UsersDB = Depends(login_required)):
     return user
 
+# Routes for user experience(GET,POST,PUT,DELETE)
 
-@router.get('/profile/user/applications', response_model=List[ApplicationResponse])
-def user_applications(user: UsersDB = Depends(login_required), p=Depends(pagination), db: Session = Depends(get_db)):
+@router.post('/me/experience', response_model= ExperienceResponse)
+async def add_experience(
+    experience:ExperienceCreate,
+    user: UsersDB = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
+    ):
+    try:
+        new_experience = Experience(
+                organization_name= experience.organization_name, 
+                user_id = user.id,
+                role= experience.role, start_date= experience.start_date,
+                end_date= experience.end_date, 
+                contribution= experience.contribution, 
+                currently_working= experience.currently_working, 
+                skills_used= experience.skills_used
+        )
+
+        db.add(new_experience)
+        await db.commit()
+        await db.refresh(new_experience)
+        logger.info("New experience added")
+
+        return new_experience
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("Unable to add experience")
+
+
+@router.put('/me/experience/{experience_id}', response_model= ExperienceResponse)
+async def update_experience( 
+                            experience_id:int, 
+                            experience:UpdateExperience, 
+                            user: UsersDB = Depends(login_required),
+                            db: AsyncSession = Depends(get_db)
+                            ):
+    
+    try:
+        existing_experience = await db.execute(select(Experience).where(Experience.id == experience_id, Experience.user_id == user.id ))
+        user_exp = existing_experience.scalar_one_or_none()
+
+        if not user_exp:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Experience not found"
+                )
+
+        updates = experience.model_dump(exclude_unset=True)
+
+        for field, value in updates.items():
+            setattr(user_exp, field, value)
+        await db.commit()
+        await db.refresh(user_exp)
+
+        logger.info("Updated experience")
+        return user_exp
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+        
+
+@router.get('/me/experience', response_model= List[ExperienceResponse])
+async def get_experience(
+    user:UsersDB = Depends(login_required), 
+    db: AsyncSession = Depends(get_db)
+    ):
+    try:
+        existing_user_experience = await db.execute(select(Experience).where(Experience.user_id == user.id))
+        user_exp = existing_user_experience.scalars().all()
+
+        if not user_exp:
+            return []
+        
+        return user_exp
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("Experience for %s user not found", user.id)
+        raise
+        
+    
+@router.delete('/me/experience/{experience_id}')
+async def delete_experience(
+    experience_id:int,
+    user: UsersDB = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        existing_user_exp = await db.execute(select(Experience).where(Experience.id == experience_id, Experience.user_id == user.id))
+        user_exp = existing_user_exp.scalar_one_or_none()
+        
+        if not user_exp:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "user experience not found")
+        
+        await db.delete(user_exp)
+        await db.commit()
+
+        return Response(status_code= status.HTTP_204_NO_CONTENT)
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("Unable to delete experience")
+        raise
+
+
+#Routes for projects of users(GET,POST,PUT,DELETE)
+@router.get('/me/projects', response_model = List[ ProjectResponse])
+async def get_projects(user:UsersDB = Depends(login_required),p = Depends(pagination), db:AsyncSession = Depends(get_db)):
+    skip,limit = p
+    try:
+        existing_project= await db.execute(select(Projects).where(Projects.user_id == user.id).offset(skip).limit(limit))
+        projects = existing_project.scalars().all()
+
+        if not projects:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Projects not found")
+        
+        logger.info("Fetched the projects for %s user", user.id)
+        return projects
+    except Exception:
+        logger.exception("DB error")
+        raise
+
+
+@router.post('/me/projects', response_model=ProjectResponse)
+async def add_project(
+    project: ProjectsCreate, 
+    user:UsersDB = Depends(login_required), 
+    db:AsyncSession = Depends(get_db)
+    ):
+    try:
+        new_project = Projects(
+            title = project.title,
+            user_id = user.id,
+            description = project.description,
+            github_link = project.github_link,
+            live_url = project.live_url
+        )
+
+        db.add(new_project)
+        await db.commit()
+        await db.refresh(new_project)
+        logger.info("Added new project for %s user", user.id)
+
+        return new_project
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+@router.put('/me/projects/{project_id}', response_model=ProjectResponse)
+async def update_project(
+    project_id:int, 
+    project:UpdateProjects, 
+    user:UsersDB = Depends(login_required), 
+    db:AsyncSession = Depends(get_db)
+    ):
+    try:
+        existing_project = await db.execute(select(Projects).where(Projects.id == project_id,Projects.user_id == user.id))
+        user_project = existing_project.scalar_one_or_none()
+
+        if not user_project:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Project not found")
+        
+        updates = project.model_dump(exclude_unset=True)
+
+        for field, value in updates.items():
+            setattr(user_project, field, value)
+
+        await db.commit()
+        await db.refresh(user_project)
+
+        logger.info("Updated % user project %s", user.id, project_id)
+        return user_project
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+@router.delete('/me/projects/{project_id}')
+async def delete_project(
+    project_id:int,
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        existing_project = await db.execute(select(Projects).where(Projects.id == project_id, Projects.user_id == user.id))
+        user_project = existing_project.scalar_one_or_none()
+
+        if not user_project:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Project not found")
+        
+        await db.delete(user_project)
+        await db.commit()
+
+        logger.info("Deleted %s user %s project", user.id, project_id)
+
+        return Response(status_code= status.HTTP_204_NO_CONTENT)
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+#Routes for skills GET, POST
+@router.get('/me/skills', response_model= List[SkillResponse])
+async def get_skills(
+    user:UsersDB = Depends(login_required), 
+    db:AsyncSession = Depends(get_db)
+    ):
+
+    try:
+        existing_skills = await db.execute(select(UserSkills).options(selectinload(UserSkills.skills)).where(UserSkills.user_id == user.id))
+        user_skills = existing_skills.scalars().all()
+
+        if not user_skills:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail = "Skills not added"
+            )
+        return [mapping.skills for mapping in user_skills]
+    
+    except Exception:
+        logger.exception("DB error")
+        raise
+
+
+@router.post('/me/skills', response_model= SkillResponse)
+async def add_skills(
+    skills: SkillsCreate, 
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+    ):
+    
+    try:
+        #Check if the skill is already in the Skills table
+        new_skill = await db.execute(select(Skills).where(Skills.skill_name == skills.skill_name))
+        user_skill = new_skill.scalar_one_or_none()
+        
+        #If the skill is not added in the table store it 
+        if user_skill is None:
+            user_skill = Skills(skill_name = skills.skill_name)
+            db.add(user_skill)
+            await db.flush()
+            
+        existing_user_skill = await db.execute(select(UserSkills).where(UserSkills.skill_id == user_skill.id, UserSkills.user_id == user.id))
+        existing_skill = existing_user_skill.scalar_one_or_none()
+
+        if existing_skill:
+            raise HTTPException(
+                status_code= status.HTTP_409_CONFLICT,
+                detail="Skill already added"
+            )
+        
+        skill = UserSkills(skill_id = user_skill.id, user_id = user.id)
+        db.add(skill)        
+
+        await db.commit()
+
+        logger.info("Added skill for %s user", user.id)
+        
+        return user_skill
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+# Routes for adding social platform profile links (GET, POST, DELETE)
+@router.get('/me/socials', response_model=List[SocialsResponse])
+async def get_socials(
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        existing_socials = await db.execute(select(Socials).where(Socials.user_id == user.id))
+        socials = existing_socials.scalars().all()
+
+        if not socials:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail = "Socials not found"
+            )
+        
+        return socials
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+@router.put('/me/socials/{social_id}', response_model= SocialsResponse)
+async def add_socials(
+    socials:UpdateSocials,
+    social_id:int,
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        existing_socials = await db.execute(select(Socials).where(Socials.user_id == user.id, Socials.id == social_id))
+        user_socials = existing_socials.scalar_one_or_none()
+
+        if not user_socials:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail= "Social links not found for the user"
+            )
+        
+        updates = socials.model_dump(exclude_unset=True)
+
+        for field, value in updates.items():
+            setattr(user_socials, field, value)
+        await db.commit()
+        await db.refresh(user_socials)
+        logger.info("Added socials for % user", user.id )
+
+        return user_socials
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+
+@router.delete('/me/socials/{social_id}')
+async def delete_socials(
+    social_id:int,
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(Socials).where(Socials.user_id == user.id, Socials.id ==social_id))
+        user_social = result.scalar_one_or_none()
+
+        if not user_social:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail="Socials link not found"
+            )
+        await db.delete(user_social)
+        await db.commit()
+
+        logger.info("Deleted %s social for %s user", social_id, user.id)
+
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")        
+        raise
+
+
+@router.get('/users/{user_id}', response_model= UserResponse )
+async def get_user_profile(
+    user_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+        user = existing_user.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail = "User not found"
+            )
+        
+        return user
+    
+    except Exception:
+
+        logger.exception("DB error")
+        raise
+
+
+@router.get('/user/{user_id}/experience', response_model = List[ExperienceResponse])
+async def get_user_experience(
+    user_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(Experience).where(Experience.user_id== user_id))
+        user_experience = result.scalars().all()
+
+        if not user_experience:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail= "Experience not found"
+            )
+        
+        return user_experience
+    
+    except Exception:
+        logger.exception("DB error")
+        raise
+
+
+@router.get('/user/{user_id}/skills', response_model= List[SkillResponse])
+async def get_user_skills(
+    user_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(UserSkills).options(selectinload(UserSkills.skills)).where(UserSkills.user_id == user_id))
+        user_skills = result.scalars().all()
+
+        if not user_skills:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail= "Skills not found"
+            )
+        return [mapping.skills for mapping in user_skills]
+    
+    except Exception:
+        logger.exception("DB error")
+        raise
+
+
+@router.get('/user/{user_id}/projects', response_model = List[ProjectResponse])
+async def get_user_projects(
+    user_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(Projects).where(Projects.user_id== user_id))
+        user_projects = result.scalars().all()
+
+        if not user_projects:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail= "Projects not found"
+            )
+        
+        return user_projects
+    
+    except Exception:
+        logger.exception("DB error")
+        raise    
+
+
+@router.get('/user/{user_id}/socials', response_model = List[SocialsResponse])
+async def get_user_socials(
+    user_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(Socials).where(Socials.user_id== user_id))
+        user_socials = result.scalars().all()
+
+        if not user_socials:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail= "Socials not found"
+            )
+        
+        return user_socials
+    
+    except Exception:
+        logger.exception("DB error")
+        raise
+
+
+@router.get('/users/me/applications', response_model=List[ApplicationResponse])
+async def user_applications(
+    user: UsersDB = Depends(login_required), 
+    p=Depends(pagination), 
+    db: AsyncSession = Depends(get_db)
+    ):
     skip, limit = p
-    applications = db.query(ApplicationsDB).filter(ApplicationsDB.user_id == user.id).offset(skip).limit(limit).all()
-    return applications
+
+    try:
+        result = await db.execute(select(ApplicationsDB).where(ApplicationsDB.user_id == user.id).offset(skip).limit(limit))
+        applications = result.scalars().all()
+
+        if not applications:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND)
+        
+        return applications
+
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to fetch the application")
+        raise 
 
 
-@router.get('/profile/recruiter', response_model=UserResponse)
-def recruiter_profile(recruiter: UsersDB = Depends(recruiter_required)):
+@router.get('/users/recruiter/profile', response_model=UserResponse)
+async def recruiter_profile(recruiter: UsersDB = Depends(recruiter_required)):
     return recruiter
 
 
-@router.get('/profile/admin', response_model=UserResponse)
-def admin_profile(user: UsersDB = Depends(admin_required)):
+@router.get('/users/admin/profile', response_model=UserResponse)
+async def admin_profile(user: UsersDB = Depends(admin_required)):
     return user
 
 
-@router.get('/profile/recruiter/posts', response_model=List[JobResponse])
-def recruiter_posts(recruiter: UsersDB = Depends(recruiter_required), p=Depends(pagination), db: Session = Depends(get_db)):
+@router.get('/users/recruiter/posts', response_model=List[JobResponse])
+async def recruiter_posts(recruiter: UsersDB = Depends(recruiter_required), p=Depends(pagination), db: AsyncSession = Depends(get_db)):
     skip, limit = p
-    posts = db.query(JobsDB).filter(JobsDB.created_by == recruiter.id).offset(skip).limit(limit).all()
-    return posts
+    try:
+        existing_posts = await db.execute(select(JobsDB).where(JobsDB.created_by == recruiter.id).offset(skip).limit(limit))
+        posts = existing_posts.scalars().all()
+        return posts
+
+    except Exception:
+        logger.exception()
+        raise
 
 
-@router.delete('/profile/recruiter/posts/delete', response_model=JobResponse)
-def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recruiter: UsersDB = Depends(recruiter_required), db: Session = Depends(get_db)):
-    job = db.query(JobsDB).filter(JobsDB.id == job_id, JobsDB.created_by == recruiter.id).first()
+@router.delete('/users/recruiter/posts/delete/{job_id}', response_model=JobResponse)
+async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recruiter: UsersDB = Depends(recruiter_required), db: AsyncSession = Depends(get_db)):
+    existing_job =await db.execute(select (JobsDB).where(JobsDB.id == job_id, JobsDB.created_by == recruiter.id))
+    job = existing_job.scalar_one_or_none()
 
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
@@ -179,9 +695,13 @@ def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recruiter: U
     # save details before deleting
     job_title = job.title
     job_company = job.company
+    try: 
+        await db.delete(job)
+        await db.commit()
 
-    db.delete(job)
-    db.commit()
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to delete %s job", job_id)
 
     logger.info("User %s deleted the job posting", recruiter.name, job.title)
 
@@ -196,21 +716,28 @@ def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recruiter: U
 
 
 @router.get('/admin/users', response_model=List[UserResponse])
-def get_users(admin: UsersDB = Depends(admin_required), p=Depends(pagination), db: Session = Depends(get_db)):
+async def get_users(admin: UsersDB = Depends(admin_required), p=Depends(pagination), db: AsyncSession = Depends(get_db)):
     skip, limit = p
-    users = db.query(UsersDB).offset(skip).limit(limit).all()
+    result = await db.execute(select(UsersDB).offset(skip).limit(limit))
+    users = result.scalars().all()
     return users
 
 
 @router.patch('/admin/user/deactivate', response_model=UserResponse)
-def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+async def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
+    existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+    user = existing_user.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    user.is_active = False
-    db.commit()
+    try:
+        user.is_active = False
+        await db.commit()
+        logger.info("Admin deactivated user %s", user.name)
 
-    logger.info("Admin deactivated user %s", user.name)
+    
+    except Exception:
+        logger.exception("Failed to deactivate %s user", user.name)
+
 
     background_tasks.add_task(process_notification, {
         "receiver_id": user_id,
@@ -221,20 +748,26 @@ def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin: User
 
 
 @router.patch('/admin/user/activate', response_model=UserResponse)
-def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+async def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
+    existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+    user = existing_user.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already active")
+    try:
+        user.is_active = True
+        await db.commit()
+        await db.refresh(user)
+        logger.info("User %s activated successful", user.name)
 
-    user.is_active = True
-    db.commit()
-    db.refresh(user)
     
-    logger.info("User %s activated successful", user.name)
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to activate %s user", user.name)
+    
 
     background_tasks.add_task(process_notification, {
         "receiver_id": user_id,
@@ -245,8 +778,9 @@ def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersD
 
 
 @router.get('/admin/user', response_model=UserResponse)
-def get_user(user_id: int, admin: UsersDB = Depends(admin_required), db: Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+async def get_user(user_id: int, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
+    existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+    user= existing_user.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
@@ -255,8 +789,9 @@ def get_user(user_id: int, admin: UsersDB = Depends(admin_required), db: Session
 
 
 @router.get('/admin/promote-admin', response_model=UserResponse)
-def promote_user(user_id: int, admin: UsersDB = Depends(admin_required), db: Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+async def promote_user(user_id: int, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
+    existing_user =await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+    user = existing_user.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -265,14 +800,16 @@ def promote_user(user_id: int, admin: UsersDB = Depends(admin_required), db: Ses
 
 
 @router.get('/profile/notifications', response_model=List[NotificationResponse])
-def notifications(user=Depends(login_required), p=Depends(pagination), db: Session = Depends(get_db)):
+async def notifications(user=Depends(login_required), p=Depends(pagination), db: AsyncSession = Depends(get_db)):
     skip, limit = p
-    notifications = db.query(NotificationsDB).filter(NotificationsDB.user_id == user.id).order_by(NotificationsDB.id.desc()).offset(skip).limit(limit).all()
+    results = await db.execute(select(NotificationsDB).where(NotificationsDB.user_id == user.id).order_by(NotificationsDB.id.desc()).offset(skip).limit(limit))
+    notifications = results.scalars().all()
+    logger.info("Notifications found")
     return notifications
 
 
 @router.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
+async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     await websocket.accept()
     token = websocket.query_params.get("token")
 
@@ -287,7 +824,8 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
         await websocket.close(code=1008)
         return
 
-    user = db.query(UsersDB).filter(UsersDB.email == useremail).first()
+    result = await db.execute(select(UsersDB).where(UsersDB.email == useremail))
+    user = result.scalar_one_or_none()
 
     if not user:
         await websocket.close(code=1008)
@@ -305,7 +843,7 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
 
 
 @router.post('/profile/upload', response_model=UploadResponse)
-async def upload_pic(file: UploadFile = File(...), user=Depends(login_required), db: Session = Depends(get_db)):
+async def upload_pic(file: UploadFile = File(...), user=Depends(login_required), db: AsyncSession = Depends(get_db)):
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only images allowed")
 
@@ -326,27 +864,20 @@ async def upload_pic(file: UploadFile = File(...), user=Depends(login_required),
     result = cloudinary.uploader.upload(file.file)
     image_url = result.get("secure_url")
     public_id = result.get("public_id")
+    
+    try:
+        user.profile_pic = image_url
+        user.profile_pic_public_id = public_id
+        await db.commit()
+        await db.refresh(user)
+        logger.info("Profile pic uploaded")
 
-    user.profile_pic = image_url
-    user.profile_pic_public_id = public_id
-    db.commit()
-    db.refresh(user)
-    logger.info("Profile pic uploaded")
+    except Exception:
+        await db.rollback()
+        logger.exception("DB failed")
     return {"image_url": image_url}
 
-class UserInfo(BaseModel):
-    id:int
-    name:str
-    email:str
 
-@router.post('/users',response_model=UserInfo)
-def get_userinfo(name:str, email:str, db:Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.name==name and UsersDB.email==email).first()
-    if not user:
-        new_user= UsersDB(name=name, email=email)
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        
-        return new_user
+
+    
     

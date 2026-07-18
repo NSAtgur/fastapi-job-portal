@@ -1,6 +1,8 @@
 from fastapi import Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
-from database import get_db, UsersDB
+from models import UsersDB
+from database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from tokens import verify_token
 from fastapi.security import OAuth2PasswordBearer
 import logging
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/login')
 
-def login_required(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def login_required(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     payload = verify_token(token)
 
     if not isinstance(payload, dict):
@@ -19,7 +21,8 @@ def login_required(token: str = Depends(oauth2_scheme), db: Session = Depends(ge
     if not user_email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token missing user info')
 
-    user = db.query(UsersDB).filter(UsersDB.email == user_email).first()
+    result = await db.execute(select(UsersDB).where(UsersDB.email == user_email))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
 
@@ -40,11 +43,12 @@ def role_required(*allowed_roles: str):
 admin_required = role_required('admin')
 recruiter_required = role_required('recruiter')
 
-def pagination(skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
-    return {'skip': skip, 'limit': limit}
+async def pagination(skip: int = Query(0, ge=0), limit: int = Query(10, ge=1, le=100)):
+    return skip, limit
 
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    result =await db.execute(select(UsersDB).where(UsersDB.id == user_id))
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     return user

@@ -1,98 +1,44 @@
-from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, UniqueConstraint, Boolean,JSON
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.ext.asyncio import(
+        create_async_engine,
+        AsyncSession,
+        async_sessionmaker
+    )
+from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+from typing import AsyncGenerator
+
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(
+engine = create_async_engine(
     DATABASE_URL,
+    echo=False,
     pool_pre_ping=True,
-    pool_size=2,        # ← reduce from 5
-    max_overflow=3,     # ← reduce from 10
+    pool_size=5,        # ← reduce from 5
+    max_overflow=10,     # ← reduce from 10
     pool_recycle=300,   # ← recycle connections every 5 mins
     pool_timeout=30
 )
-Base = declarative_base()
-SessionLocal = sessionmaker(
-    autocommit=False,
+
+class Base(DeclarativeBase):
+    pass
+
+AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
-    bind=engine
+    bind=engine,
+    expire_on_commit= False,
 )
 
-class UsersDB(Base):
 
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key = True)
-    name = Column(String,nullable=True)
-    email = Column(String, unique = True, index =True)
-    password = Column(String)
-    profile_pic = Column(String,nullable = True)
-    profile_pic_public_id = Column(String, nullable = True)
-    role = Column(String, default = "user", nullable = False)
-    is_active = Column(Boolean, default = True)
+async def get_db() -> AsyncGenerator[AsyncSession,None]:
 
-    applications = relationship("ApplicationsDB", back_populates='user')
-    jobs = relationship("JobsDB", back_populates ='creator')
-    notifications = relationship("NotificationsDB", back_populates="user")
+    async with AsyncSessionLocal() as session:
+        yield session
 
-class JobsDB(Base):
-
-    __tablename__= "jobs"
-    id = Column(Integer, primary_key = True)
-    title = Column(String, nullable = False)
-    company = Column(String, nullable = False)
-    salary = Column(Integer,nullable=True)
-    location = Column(String,nullable=True)
-    job_type =Column(String,nullable=True)
-    created_by = Column(Integer,ForeignKey("users.id"),nullable = False)
-    created_at = Column(DateTime, default = datetime.utcnow())
-
-    creator = relationship("UsersDB", back_populates="jobs")
-    applications = relationship("ApplicationsDB", back_populates= 'job')
-
-
-class ApplicationsDB(Base):
-
-    __tablename__ = 'applications'
-    id = Column(Integer,primary_key= True)
-    user_name = Column(String,nullable=True)
-    user_id = Column( Integer, ForeignKey("users.id"))
-    job_id = Column( Integer, ForeignKey("jobs.id"))
-    applied_at = Column(DateTime,default = datetime.utcnow())
-    status = Column( String, nullable = False)
-
-    user = relationship("UsersDB", back_populates='applications')
-    job = relationship("JobsDB", back_populates = 'applications')
-    
-    __table_args__= (UniqueConstraint("user_id","job_id", name ="unique_user_job"),)
-    
-
-
-class NotificationsDB(Base):
-    __tablename__ = 'notifications'
-    id = Column(Integer, primary_key = True)
-    user_id = Column( Integer, ForeignKey("users.id"), index = True)
-    message = Column(String)
-    is_read = Column(Boolean, default = False)
-    created_at = Column(DateTime, default = datetime.utcnow())
-
-    user = relationship("UsersDB", back_populates="notifications")
-
-Base.metadata.create_all(engine)
-
-Session = sessionmaker(bind = engine)
-
-def get_db():
-    db = Session()
-
-    try:
-        yield db
-
-    finally:
-        db.close()
+        
 
 
 

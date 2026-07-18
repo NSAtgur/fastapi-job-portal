@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Graphite base */
+  --color-graphite-950: #16140F;
+  --color-graphite-900: #1E1B15;
+  --color-graphite-850: #24211A;
+  --color-graphite-800: #2A2620;
+  --color-graphite-700: #38332A;
+  --color-graphite-600: #4A443A;
+
+  /* Text */
+  --color-paper: #EDE7DA;
+  --color-paper-dim: #A69E8C;
+  --color-paper-faint: #6E6858;
+
+  /* Accent */
+  --color-amber: #D4A054;
+  --color-amber-bright: #E8B968;
+  --color-amber-dim: #8A6B3A;
+
+  /* Status pipeline colors */
+  --color-status-applied: #6B84A6;
+  --color-status-reviewing: #D4A054;
+  --color-status-interview: #8B7BA8;
+  --color-status-offer: #7A9B76;
+  --color-status-rejected: #A6706B;
+
+  /* Fonts */
+  --font-display: 'Inter Tight', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-graphite-950);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-graphite-950);
+}
+
+/* subtle grain texture for the graphite surfaces */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: -1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
