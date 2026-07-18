@@ -443,7 +443,11 @@ async def add_skills(
 
         logger.info("Added skill for %s user", user.id)
         
-        return user_skill
+        return {
+            "id":skill.skill_id,
+            "user_id":skill.user_id,
+            "skill_name":skill.skills.skill_name
+        }
     
     except Exception:
         await db.rollback()
