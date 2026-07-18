@@ -20,7 +20,10 @@ engine = create_async_engine(
     pool_size=5,        # ← reduce from 5
     max_overflow=10,     # ← reduce from 10
     pool_recycle=300,   # ← recycle connections every 5 mins
-    pool_timeout=30
+    pool_timeout=30,
+    connect_args={
+        "statement_cache_size": 0
+        }
 )
 
 class Base(DeclarativeBase):
