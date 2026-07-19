@@ -1,6 +1,6 @@
 from sqlalchemy import Integer, String, ForeignKey, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import mapped_column, relationship, Mapped
-from datetime import datetime
+from datetime import datetime,timezone
 from database import Base
 
 
@@ -54,7 +54,8 @@ class Projects(Base):
     description:Mapped[str] = mapped_column(String(100), nullable= True)
     github_link:Mapped[str] = mapped_column(String(30), nullable= True)
     live_url:Mapped[str] = mapped_column(String(30), nullable= True)
-    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                    default=lambda: datetime.now(timezone.utc))
 
     user = relationship("UsersDB", back_populates= "projects")
     
@@ -74,12 +75,13 @@ class Experience(Base):
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index= True)
     organization_name:Mapped[str] = mapped_column(String(20), nullable = True)
     role:Mapped[str] = mapped_column(String(20), nullable = True)
-    start_date:Mapped[datetime] = mapped_column(DateTime, nullable = True)
-    end_date:Mapped[datetime] = mapped_column(DateTime, nullable = True)
+    start_date:Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable = True)
+    end_date:Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable = True)
     contribution:Mapped[str] = mapped_column(String(100), nullable= True)
     currently_working:Mapped[bool] = mapped_column(Boolean, default = True)
     skills_used:Mapped[str] = mapped_column(String(100), nullable = True)
-    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                    default=lambda: datetime.now(timezone.utc))
     
     user = relationship("UsersDB", back_populates= "experiences")
 
@@ -107,7 +109,8 @@ class UserSkills(Base):
     id:Mapped[int] = mapped_column(Integer, primary_key= True)
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     skill_id:Mapped[int] = mapped_column(Integer, ForeignKey("skills.id"))
-    created_at:Mapped[datetime] = mapped_column(DateTime, default= datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                    default=lambda: datetime.now(timezone.utc))
 
     user = relationship("UsersDB", back_populates="userskills")
     skills = relationship("Skills", back_populates="userskills")
@@ -130,7 +133,8 @@ class JobsDB(Base):
     location:Mapped[str] = mapped_column(String(100),nullable=True)
     job_type:Mapped[str] = mapped_column(String(20),nullable=True)
     created_by:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"),nullable = False)
-    created_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                                default=lambda: datetime.now(timezone.utc))
 
     creator = relationship("UsersDB", back_populates="jobs")
     applications = relationship("ApplicationsDB", back_populates= 'job')
@@ -146,7 +150,8 @@ class ApplicationsDB(Base):
     user_name:Mapped[str] = mapped_column(String(20),nullable=True)
     user_id:Mapped[int] = mapped_column( Integer, ForeignKey("users.id"))
     job_id:Mapped[int] = mapped_column( Integer, ForeignKey("jobs.id"))
-    applied_at:Mapped[datetime] = mapped_column(DateTime,default = datetime.utcnow)
+    applied_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                        default=lambda: datetime.now(timezone.utc))
     status:Mapped[str] = mapped_column( String, nullable = False)
 
     user = relationship("UsersDB", back_populates='applications')
@@ -170,7 +175,8 @@ class Socials(Base):
     leetcode_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     codeforces_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
     portfolio_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    created_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                    default=lambda: datetime.now(timezone.utc))
 
 
     user = relationship("UsersDB", back_populates="socials")
@@ -185,6 +191,7 @@ class NotificationsDB(Base):
     user_id:Mapped[int] = mapped_column( Integer, ForeignKey("users.id"), index = True)
     message:Mapped[str] = mapped_column(String)
     is_read:Mapped[bool] = mapped_column(Boolean, default = False)
-    created_at:Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
+    created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                            default=lambda: datetime.now(timezone.utc))
 
     user = relationship("UsersDB", back_populates="notifications")

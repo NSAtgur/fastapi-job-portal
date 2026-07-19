@@ -97,7 +97,6 @@ class ExperienceCreate(BaseModel):
     model_config = ConfigDict(from_attributes = True)
 
 class UpdateExperience(BaseModel):
-    user_id:int
     organization_name:str| None = None
     role:str| None = None
     start_date:datetime| None = None
@@ -124,7 +123,6 @@ class ExperienceResponse(BaseModel):
 
 
 class ProjectsCreate(BaseModel):
-    user_id:int
     title:str
     description:str
     github_link:HttpUrl

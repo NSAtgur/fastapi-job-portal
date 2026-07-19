@@ -7,6 +7,8 @@ import { Applications } from '@/pages/Applications';
 import { Profile } from '@/pages/Profile';
 import { PostJob } from '@/pages/recruiter/PostJob';
 import { ManagePosts } from '@/pages/recruiter/ManagePosts';
+import { JobApplicants } from '@/pages/recruiter/JobApplicants';
+import { ApplicantProfile } from '@/pages/recruiter/ApplicantProfile';
 import { AdminUsers } from '@/pages/admin/AdminUsers';
 import { AppLayout } from '@/layouts/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -33,6 +35,8 @@ function App() {
           <Route path="/recruiter" element={<Navigate to="/recruiter/posts" replace />} />
           <Route path="/recruiter/post" element={<PostJob />} />
           <Route path="/recruiter/posts" element={<ManagePosts />} />
+          <Route path="/recruiter/posts/:jobId/applications" element={<JobApplicants />} />
+          <Route path="/recruiter/applicants/:userId" element={<ApplicantProfile />} />
         </Route>
       </Route>
 

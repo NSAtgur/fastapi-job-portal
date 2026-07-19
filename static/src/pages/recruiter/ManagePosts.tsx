@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, MapPin, Banknote, Plus } from 'lucide-react';
+import { Trash2, MapPin, Banknote, Plus, Users } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
@@ -63,13 +63,20 @@ export function ManagePosts() {
                 <span>{job.job_type}</span>
               </div>
             </div>
-            <button
-              onClick={() => deleteMutation.mutate(job.id)}
-              className="flex-shrink-0 rounded-md p-2 text-paper-faint transition-colors hover:bg-graphite-800 hover:text-status-rejected"
-              aria-label="Delete posting"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <Link to={`/recruiter/posts/${job.id}/applications`}>
+                <Button size="sm" variant="outline">
+                  <Users className="h-3.5 w-3.5" /> Applications
+                </Button>
+              </Link>
+              <button
+                onClick={() => deleteMutation.mutate(job.id)}
+                className="flex-shrink-0 rounded-md p-2 text-paper-faint transition-colors hover:bg-graphite-800 hover:text-status-rejected"
+                aria-label="Delete posting"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </Card>
         ))}
       </div>

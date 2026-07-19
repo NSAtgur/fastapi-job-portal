@@ -13,9 +13,11 @@ export function ProfileHeader() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
+    name: user?.name || '',
     headline: user?.headline || '',
     bio: user?.bio || '',
     education: user?.education || '',
+    experience_years: user?.experience_years?.toString() || '',
   });
 
   const uploadMutation = useMutation({
@@ -32,12 +34,15 @@ export function ProfileHeader() {
     },
   });
 
-  // NOTE: there's no PUT /users/me/profile route in the backend yet, even
-  // though ProfileUpdate schema already exists unused in schemas.py. This
-  // mutation is wired for when that route gets added.
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.put('/users/me/profile', form);
+      const { data } = await api.patch('/me/profile', {
+        name: form.name,
+        headline: form.headline,
+        bio: form.bio,
+        education: form.education,
+        experience_years: form.experience_years === '' ? undefined : Number(form.experience_years),
+      });
       return data;
     },
     onSuccess: (data) => {
@@ -121,6 +126,11 @@ export function ProfileHeader() {
           ) : (
             <div className="mt-4 flex flex-col gap-4">
               <Input
+                label="Name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+              <Input
                 label="Headline"
                 value={form.headline}
                 onChange={(e) => setForm({ ...form, headline: e.target.value })}
@@ -131,6 +141,13 @@ export function ProfileHeader() {
                 value={form.education}
                 onChange={(e) => setForm({ ...form, education: e.target.value })}
                 placeholder="e.g. B.Tech CS, VIT Bhopal"
+              />
+              <Input
+                label="Years of experience"
+                type="number"
+                min={0}
+                value={form.experience_years}
+                onChange={(e) => setForm({ ...form, experience_years: e.target.value })}
               />
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-medium text-paper-dim tracking-wide">Bio</label>
@@ -144,8 +161,7 @@ export function ProfileHeader() {
 
               {updateMutation.isError && (
                 <p className="text-[13px] text-status-rejected">
-                  Couldn't save — this needs a{' '}
-                  <code className="font-mono">PUT /users/me/profile</code> route on the backend.
+                  {(updateMutation.error as any)?.response?.data?.detail || "Couldn't save changes."}
                 </p>
               )}
 

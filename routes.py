@@ -151,8 +151,14 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already applied")
     try:
         new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id, status="applied")
+
+        logger.info("User %s is applying for %s job ", user.id, job_id)
+
         db.add(new_application)
+
+        logger.info("Commiting the application")
         await db.commit()
+        logger.info("Successfully commited the new application")
         await db.refresh(new_application)
         logger.info(f"{user.name} applied for {job.title}")
         background_tasks.add_task(process_notification, {
@@ -169,7 +175,34 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
         raise
 
 
+@router.patch('/me/profile', response_model = UserResponse)
+async def update_profile(
+    profile:ProfileUpdate,
+    user:UsersDB = Depends(login_required),
+    db:AsyncSession = Depends(get_db)
+):
     
+    try:
+        result = await db.execute(select(UsersDB).where(UsersDB.id == user.id))
+        existing_user = result.scalar_one_or_none()
+
+        updates = profile.model_dump(exclude_unset=True)
+
+        for field,value in updates.items():
+            setattr(existing_user, field, value)
+
+        await db.commit()
+        await db.refresh(existing_user)
+
+        return existing_user
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
+    
+
 
 
 @router.get('/users/me/profile', response_model=UserResponse)
@@ -194,9 +227,17 @@ async def add_experience(
                 currently_working= experience.currently_working, 
                 skills_used= experience.skills_used
         )
+        
+        logger.info("Adding experience for %s user", user.id)
 
         db.add(new_experience)
+
+        logger.info("Commiting new experience")
+
         await db.commit()
+
+        logger.info("Commited experience details for %s user", user.id)
+        
         await db.refresh(new_experience)
         logger.info("New experience added")
 
@@ -235,15 +276,23 @@ async def update_experience(
                     status_code=404,
                     detail="Experience not found"
                 )
+        
+        logger.info("Updating %s experience of user %s", experience_id, user.id)
 
         updates = experience.model_dump(exclude_unset=True)
 
         for field, value in updates.items():
             setattr(user_exp, field, value)
+
+        
         await db.commit()
+        
+        logger.info("Successfully commited changes for %s user ", user.id)
+
         await db.refresh(user_exp)
 
         logger.info("Updated experience")
+
         return ExperienceResponse(
             id=user_exp.id,
             organization_name=user_exp.organization_name,
@@ -272,6 +321,7 @@ async def get_experience(
 
         if not user_exp:
             return []
+        
 
         return [
             ExperienceResponse(
@@ -307,8 +357,14 @@ async def delete_experience(
         if not user_exp:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "user experience not found")
         
-        db.delete(user_exp)
+        logger.info("Deleting %s experience of %s user ", experience_id, user.id)
+
+        await db.delete(user_exp)
+
+        logger.info("Commiting the changes after deleting % experience", experience_id)
+
         await db.commit()
+        logger.info("successfully commited the changees and deleted the %s experience", experience_id)
 
         return Response(status_code= status.HTTP_204_NO_CONTENT)
     
@@ -325,7 +381,7 @@ async def get_projects(user:UsersDB = Depends(login_required),p = Depends(pagina
     try:
         existing_project= await db.execute(select(Projects).where(Projects.user_id == user.id).offset(skip).limit(limit))
         projects = existing_project.scalars().all()
-
+        
         if not projects:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Projects not found")
         
@@ -357,12 +413,18 @@ async def add_project(
             title = project.title,
             user_id = user.id,
             description = project.description,
-            github_link = project.github_link,
-            live_url = project.live_url
+            github_link = str(project.github_link),
+            live_url = str(project.live_url)
         )
-
+        
+        logger.info("Adding a new project for % user", user.id)
         db.add(new_project)
+
+        logger.info("Commiting the changes")
+
         await db.commit()
+
+        logger.info("Successfully commited the changes")
         await db.refresh(new_project)
         logger.info("Added new project for %s user", user.id)
 
@@ -398,7 +460,7 @@ async def update_project(
 
         for field, value in updates.items():
             setattr(user_project, field, value)
-
+        
         await db.commit()
         await db.refresh(user_project)
 
@@ -431,7 +493,7 @@ async def delete_project(
         if not user_project:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "Project not found")
         
-        db.delete(user_project)
+        await db.delete(user_project)
         await db.commit()
 
         logger.info("Deleted %s user %s project", user.id, project_id)
@@ -545,36 +607,46 @@ async def get_socials(
         raise
 
 
-@router.put('/me/socials/{social_id}', response_model= SocialsResponse)
-async def add_socials(
-    socials:UpdateSocials,
-    social_id:int,
-    user:UsersDB = Depends(login_required),
-    db:AsyncSession = Depends(get_db)
+@router.patch("/me/socials", response_model=SocialsResponse)
+async def update_socials(
+    socials: UpdateSocials,
+    user: UsersDB = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     try:
-        existing_socials = await db.execute(select(Socials).where(Socials.user_id == user.id, Socials.id == social_id))
-        user_socials = existing_socials.scalar_one_or_none()
+        result = await db.execute(
+            select(Socials).where(Socials.user_id == user.id)
+        )
+        existing_socials = result.scalar_one_or_none()
 
-        if not user_socials:
-            raise HTTPException(
-                status_code= status.HTTP_404_NOT_FOUND,
-                detail= "Social links not found for the user"
-            )
-        
+        if existing_socials is None:
+            existing_socials = Socials(user_id=user.id)
+            db.add(existing_socials)
+
         updates = socials.model_dump(exclude_unset=True)
 
         for field, value in updates.items():
-            setattr(user_socials, field, value)
-        await db.commit()
-        await db.refresh(user_socials)
-        logger.info("Added socials for % user", user.id )
+            if value is not None:
+                setattr(existing_socials, field, str(value))
 
-        return user_socials
-    
+        await db.commit()
+        await db.refresh(existing_socials)
+
+        logger.info("Updated socials for user %s", user.id)
+
+        return SocialsResponse(
+            id=existing_socials.id,
+            github_profile_url=existing_socials.github_profile_url,
+            linkedin_profile_url=existing_socials.linkedin_profile_url,
+            leetcode_profile_url=existing_socials.leetcode_profile_url,
+            codeforces_profile_url=existing_socials.codeforces_profile_url,
+            portfolio_profile_url=existing_socials.portfolio_profile_url,
+            created_at=existing_socials.created_at,
+        )
+
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("Unable to update socials for user %s", user.id)
         raise
 
 
@@ -593,7 +665,7 @@ async def delete_socials(
                 status_code= status.HTTP_404_NOT_FOUND,
                 detail="Socials link not found"
             )
-        db.delete(user_social)
+        await db.delete(user_social)
         await db.commit()
 
         logger.info("Deleted %s social for %s user", social_id, user.id)
@@ -665,7 +737,13 @@ async def get_user_skills(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail= "Skills not found"
             )
-        return [mapping.skills for mapping in user_skills]
+        return [SkillResponse(
+            id = mapping.id,
+            skill_name= mapping.skills.skill_name,
+            created_at= mapping.created_at
+            )
+            for mapping in user_skills
+        ]
     
     except Exception:
         logger.exception("DB error")
@@ -739,6 +817,44 @@ async def user_applications(
         raise 
 
 
+@router.get('/users/recruiter/posts/{job_id}/applications', response_model=List[ApplicationResponse])
+async def recruiter_applications(
+    job_id: int,
+    recruiter: UsersDB = Depends(recruiter_required),
+    p=Depends(pagination),
+    db: AsyncSession = Depends(get_db)
+):
+    skip, limit = p
+
+    try:
+        job_result = await db.execute(
+            select(JobsDB).where(JobsDB.id == job_id, JobsDB.created_by == recruiter.id)
+        )
+        job = job_result.scalar_one_or_none()
+
+        if not job:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+        result = await db.execute(
+            select(ApplicationsDB)
+            .where(ApplicationsDB.job_id == job_id)
+            .order_by(ApplicationsDB.applied_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        applications = result.scalars().all()
+
+        if not applications:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+        return applications
+
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to fetch recruiter applications")
+        raise
+
+
 @router.get('/users/recruiter/profile', response_model=UserResponse)
 async def recruiter_profile(recruiter: UsersDB = Depends(recruiter_required)):
     return recruiter
@@ -774,7 +890,7 @@ async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recrui
     job_title = job.title
     job_company = job.company
     try: 
-        db.delete(job)
+        await db.delete(job)
         await db.commit()
         logger.info("User %s deleted the job posting", recruiter.name, job.title)
 
@@ -784,7 +900,7 @@ async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recrui
             "job_title": job_title,
             "job_company": job_company
         })
- 
+
         return job
 
     except Exception:

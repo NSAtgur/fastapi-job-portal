@@ -5,12 +5,10 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
-import { useAuthStore } from '@/store/auth';
 import type { Project } from '@/types';
 
 export function ProjectsPanel() {
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', github_link: '', live_url: '' });
 
@@ -29,7 +27,6 @@ export function ProjectsPanel() {
   const addMutation = useMutation({
     mutationFn: async () => {
       const { data } = await api.post('/me/projects', {
-        user_id: user?.id,
         title: form.title,
         description: form.description,
         github_link: form.github_link,
