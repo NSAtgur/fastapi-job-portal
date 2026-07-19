@@ -1,6 +1,18 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 from datetime import datetime
 from typing import Dict, Any
+from enum import Enum
+from sqlalchemy import Enum as SQLEnum
+
+class ApplicationStatus(str, Enum):
+    pending = "Pending"
+    review = "In Review"
+    interview = "Interview Scheduled"
+    accepted = "Accepted"
+    rejected = "Rejected"
+
+class ApplicationStatusUpdate(BaseModel):
+    status:ApplicationStatus
 
 class CreateUser(BaseModel):
     name:str = Field(min_length=8, max_length=15)
@@ -60,7 +72,7 @@ class ApplicationResponse(BaseModel):
     user_name:str | None = None
     user_id:int
     job_id:int
-    status:str
+    status:ApplicationStatus
     applied_at:datetime
     
     model_config = ConfigDict(from_attributes=True)

@@ -26,11 +26,11 @@ export interface Job {
 }
 
 export type ApplicationStatus =
-  | 'applied'
-  | 'reviewing'
-  | 'interview'
-  | 'offer'
-  | 'rejected';
+  | 'Pending'
+  | 'In Review'
+  | 'Interview Scheduled'
+  | 'Accepted'
+  | 'Rejected';
 
 export interface Application {
   id: number;

@@ -1,14 +1,23 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StageTracker } from '@/components/StageTracker';
 import { api } from '@/lib/api';
-import type { Application } from '@/types';
+import type { Application, ApplicationStatus } from '@/types';
+
+const STATUS_OPTIONS: ApplicationStatus[] = [
+  'Pending',
+  'In Review',
+  'Interview Scheduled',
+  'Accepted',
+  'Rejected',
+];
 
 export function JobApplicants() {
   const { jobId } = useParams<{ jobId: string }>();
+  const queryClient = useQueryClient();
 
   const { data: applications, isLoading, isError } = useQuery({
     queryKey: ['recruiter-applications', jobId],
@@ -19,6 +28,17 @@ export function JobApplicants() {
       return data;
     },
     enabled: !!jobId,
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ applicationId, status }: { applicationId: number; status: ApplicationStatus }) => {
+      const { data } = await api.patch(
+        `/recruiter/posts/${jobId}/applications/${applicationId}`,
+        { status }
+      );
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recruiter-applications', jobId] }),
   });
 
   return (
@@ -46,7 +66,7 @@ export function JobApplicants() {
         )}
 
         {applications?.map((app) => (
-          <Card key={app.id} className="flex items-center justify-between gap-4 p-5">
+          <Card key={app.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[15px] font-semibold text-paper">
                 {app.user_name || `Applicant #${app.user_id}`}
@@ -55,17 +75,43 @@ export function JobApplicants() {
                 Applied {new Date(app.applied_at).toLocaleDateString()}
               </p>
               <div className="mt-3">
-                <StageTracker status={app.status as any} compact />
+                <StageTracker status={app.status} compact />
               </div>
             </div>
-            <Link to={`/recruiter/applicants/${app.user_id}`}>
-              <Button size="sm" variant="outline">
-                View profile <ExternalLink className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+
+            <div className="flex flex-shrink-0 items-center gap-2">
+              <select
+                value={app.status}
+                disabled={statusMutation.isPending && statusMutation.variables?.applicationId === app.id}
+                onChange={(e) =>
+                  statusMutation.mutate({
+                    applicationId: app.id,
+                    status: e.target.value as ApplicationStatus,
+                  })
+                }
+                className="h-9 rounded-md border border-graphite-700 bg-graphite-900 px-2.5 text-[13px] text-paper outline-none focus:border-amber"
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <Link to={`/recruiter/applicants/${app.user_id}`}>
+                <Button size="sm" variant="outline">
+                  View profile <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
           </Card>
         ))}
       </div>
+
+      {statusMutation.isError && (
+        <p className="mt-3 text-[13px] text-status-rejected">
+          Couldn't update that application's status.
+        </p>
+      )}
     </div>
   );
 }

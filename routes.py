@@ -4,7 +4,7 @@ from database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse
+from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse,ApplicationStatusUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
@@ -201,7 +201,7 @@ async def update_profile(
         logger.exception("DB error")
         raise
 
-    
+
 
 
 
@@ -1039,6 +1039,48 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
         logger.exception("WS error")
         manager.disconnect(user.id)
         raise
+
+
+@router.patch('/recruiter/posts/{job_id}/applications/{application_id}', response_model=ApplicationResponse)
+async def update_application_status(
+    application_id:int,
+    data:ApplicationStatusUpdate,
+    background_tasks:BackgroundTasks,
+    user:UsersDB = Depends(recruiter_required),
+    db: AsyncSession = Depends(get_db)
+):
+    
+    try:
+
+        result = await db.execute(select(ApplicationsDB).options(selectinload(ApplicationsDB.job)).where(ApplicationsDB.id == application_id))
+        existing_application = result.scalar_one_or_none()
+
+        if not existing_application:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND,
+                                detail="Application not found")
+        
+        existing_application.status = data.status
+
+        logger.info("Entered status for %s application", application_id)
+        await db.commit()
+        await db.refresh(existing_application)
+        logger.info("Updated status for application %s", application_id)
+
+        background_tasks.add_task(process_notification, {
+            "type": "application status updated",
+            "receiver_id": existing_application.user_id,
+            "job_title": existing_application.job.title,
+            "company": existing_application.job.company,
+            "status": existing_application.status
+        }
+        )
+        return existing_application
+    
+    except Exception:
+        await db.rollback()
+        logger.exception("DB error")
+        raise
+
 
 
 @router.post('/profile/upload', response_model=UploadResponse)

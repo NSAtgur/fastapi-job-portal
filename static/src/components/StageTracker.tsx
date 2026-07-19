@@ -1,18 +1,18 @@
 import type { ApplicationStatus } from '@/types';
 
 const STAGES: { key: ApplicationStatus; label: string }[] = [
-  { key: 'applied', label: 'Applied' },
-  { key: 'reviewing', label: 'Reviewing' },
-  { key: 'interview', label: 'Interview' },
-  { key: 'offer', label: 'Offer' },
+  { key: 'Pending', label: 'Pending' },
+  { key: 'In Review', label: 'In Review' },
+  { key: 'Interview Scheduled', label: 'Interview' },
+  { key: 'Accepted', label: 'Accepted' },
 ];
 
 const STAGE_COLOR: Record<ApplicationStatus, string> = {
-  applied: 'var(--color-status-applied)',
-  reviewing: 'var(--color-status-reviewing)',
-  interview: 'var(--color-status-interview)',
-  offer: 'var(--color-status-offer)',
-  rejected: 'var(--color-status-rejected)',
+  Pending: 'var(--color-status-applied)',
+  'In Review': 'var(--color-status-reviewing)',
+  'Interview Scheduled': 'var(--color-status-interview)',
+  Accepted: 'var(--color-status-offer)',
+  Rejected: 'var(--color-status-rejected)',
 };
 
 interface StageTrackerProps {
@@ -21,17 +21,18 @@ interface StageTrackerProps {
 }
 
 /**
- * Horizontal stage tracker reflecting the real application pipeline
- * (applied -> reviewing -> interview -> offer), or a terminal "rejected" state.
- * Used full-size on the Applications page and compact on job cards.
+ * Horizontal stage tracker reflecting the real ApplicationStatus pipeline
+ * (Pending -> In Review -> Interview Scheduled -> Accepted), or a terminal
+ * "Rejected" state. Used full-size on the Applications page and compact on
+ * job cards / applicant rows.
  */
 export function StageTracker({ status, compact = false }: StageTrackerProps) {
-  if (status === 'rejected') {
+  if (status === 'Rejected') {
     return (
       <div className="flex items-center gap-2">
         <span
           className="h-2 w-2 rounded-full"
-          style={{ background: STAGE_COLOR.rejected }}
+          style={{ background: STAGE_COLOR.Rejected }}
         />
         <span
           className="font-mono uppercase tracking-wider text-status-rejected"

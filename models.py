@@ -1,7 +1,10 @@
 from sqlalchemy import Integer, String, ForeignKey, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 from datetime import datetime,timezone
 from database import Base
+from schemas import ApplicationStatus
+
 
 
 class UsersDB(Base):
@@ -152,7 +155,11 @@ class ApplicationsDB(Base):
     job_id:Mapped[int] = mapped_column( Integer, ForeignKey("jobs.id"))
     applied_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                         default=lambda: datetime.now(timezone.utc))
-    status:Mapped[str] = mapped_column( String, nullable = False)
+    status: Mapped[str] = mapped_column(
+                                String(30),
+                                default=ApplicationStatus.pending.value,
+                                nullable=False,
+                            )
 
     user = relationship("UsersDB", back_populates='applications')
     job = relationship("JobsDB", back_populates = 'applications')

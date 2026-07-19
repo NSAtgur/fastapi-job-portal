@@ -7,9 +7,9 @@ import { Card } from '@/components/ui/Card';
 import { StageTracker } from '@/components/StageTracker';
 
 const SAMPLE_JOBS = [
-  { title: 'Backend Engineer', company: 'Vector Labs', location: 'Remote', status: 'interview' as const },
-  { title: 'Platform Engineer', company: 'Northstar', location: 'Bengaluru', status: 'reviewing' as const },
-  { title: 'Systems Developer', company: 'Loom & Co.', location: 'Remote', status: 'applied' as const },
+  { title: 'Backend Engineer', company: 'Vector Labs', location: 'Remote', status: 'Interview Scheduled' as const },
+  { title: 'Platform Engineer', company: 'Northstar', location: 'Bengaluru', status: 'In Review' as const },
+  { title: 'Systems Developer', company: 'Loom & Co.', location: 'Remote', status: 'Pending' as const },
 ];
 
 export function Landing() {
