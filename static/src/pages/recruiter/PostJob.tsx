@@ -16,6 +16,7 @@ export function PostJob() {
     salary: '',
     location: '',
     job_type: JOB_TYPES[0],
+    requirements: '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +28,7 @@ export function PostJob() {
         salary: Number(form.salary),
         location: form.location,
         job_type: form.job_type,
+        requirements: form.requirements || undefined,
       });
       return data;
     },
@@ -97,6 +99,22 @@ export function PostJob() {
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
           />
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] font-medium text-paper-dim tracking-wide">
+              Full job description
+            </label>
+            <textarea
+              value={form.requirements}
+              onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+              rows={8}
+              placeholder="Responsibilities, required skills, experience level, anything a candidate needs to know before applying…"
+              className="rounded-md border border-graphite-700 bg-graphite-900 px-3 py-2.5 text-sm leading-relaxed text-paper outline-none placeholder:text-paper-faint focus:border-amber"
+            />
+            <span className="text-[12px] text-paper-faint">
+              Shows on the job's detail page under "Full job description."
+            </span>
+          </div>
 
           {error && <p className="text-[13px] text-status-rejected">{error}</p>}
 
