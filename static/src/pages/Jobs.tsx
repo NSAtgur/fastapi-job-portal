@@ -1,38 +1,27 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Banknote, Briefcase, Check, Lock } from 'lucide-react';
+import { Search, ArrowUpRight } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
-import type { Job } from '@/types';
+import type { JobSearchResult } from '@/types';
 
 export function Jobs() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const queryClient = useQueryClient();
 
   const { data: jobs, isLoading, isError } = useQuery({
     queryKey: ['jobs', submittedQuery],
     queryFn: async () => {
-      const { data } = await api.get<Job[]>('/jobs', {
+      const { data } = await api.get<JobSearchResult[]>('/jobs', {
         params: { title: submittedQuery },
       });
       return data;
     },
     enabled: submittedQuery.length > 0,
-  });
-
-  const applyMutation = useMutation({
-    mutationFn: async (jobId: number) => {
-      const { data } = await api.post(`/jobs/${jobId}/apply`);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['applications'] });
-    },
   });
 
   function handleSearch(e: React.FormEvent) {
@@ -88,68 +77,28 @@ export function Jobs() {
         )}
 
         <AnimatePresence mode="popLayout">
-          {jobs?.map((job, i) => {
-            const isClosed = job.status === 'Closed';
-            const applied = applyMutation.isSuccess && applyMutation.variables === job.id;
-            return (
-              <motion.div
-                key={job.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, delay: i * 0.03, ease: 'easeOut' }}
-              >
-                <Card className="flex items-center justify-between gap-4 p-5 transition-colors hover:border-graphite-600">
+          {jobs?.map((job, i) => (
+            <motion.div
+              key={job.id}
+              layout
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, delay: i * 0.03, ease: 'easeOut' }}
+            >
+              <Link to={`/dashboard/jobs/${job.id}`}>
+                <Card className="group flex items-center justify-between gap-4 p-5 transition-colors hover:border-graphite-600">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-[15px] font-semibold text-paper">{job.title}</p>
-                      {isClosed && <Badge tone="neutral">Closed</Badge>}
-                    </div>
+                    <p className="text-[15px] font-semibold text-paper">{job.title}</p>
                     <p className="mt-0.5 text-[13px] text-paper-dim">{job.company}</p>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-3 font-mono text-[11px] text-paper-faint">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {job.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Banknote className="h-3 w-3" /> ₹{job.salary.toLocaleString('en-IN')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Briefcase className="h-3 w-3" /> {job.job_type}
-                      </span>
-                    </div>
                   </div>
-                  <Button
-                    variant={applied ? 'outline' : 'primary'}
-                    size="sm"
-                    loading={applyMutation.isPending && applyMutation.variables === job.id}
-                    disabled={isClosed || applied}
-                    onClick={() => applyMutation.mutate(job.id)}
-                  >
-                    {isClosed ? (
-                      <>
-                        <Lock className="h-3.5 w-3.5" /> Closed
-                      </>
-                    ) : applied ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" /> Applied
-                      </>
-                    ) : (
-                      'Apply'
-                    )}
-                  </Button>
+                  <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-paper-faint transition-colors group-hover:text-amber" />
                 </Card>
-              </motion.div>
-            );
-          })}
+              </Link>
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
-
-      {applyMutation.isError && (
-        <p className="mt-3 text-[13px] text-status-rejected">
-          {(applyMutation.error as any)?.response?.data?.detail || "Couldn't submit application."}
-        </p>
-      )}
     </div>
   );
 }

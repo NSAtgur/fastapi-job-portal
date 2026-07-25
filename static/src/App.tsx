@@ -3,6 +3,7 @@ import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Jobs } from '@/pages/Jobs';
+import { JobDetail } from '@/pages/JobDetail';
 import { Applications } from '@/pages/Applications';
 import { Profile } from '@/pages/Profile';
 import { PostJob } from '@/pages/recruiter/PostJob';
@@ -25,6 +26,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Navigate to="/dashboard/jobs" replace />} />
           <Route path="/dashboard/jobs" element={<Jobs />} />
+          <Route path="/dashboard/jobs/:jobId" element={<JobDetail />} />
           <Route path="/dashboard/applications" element={<Applications />} />
         </Route>
       </Route>

@@ -140,6 +140,7 @@ class JobsDB(Base):
                                     default=JobStatus.open.value,
                                     nullable=False
                                     )   
+    requirements:Mapped[str] = mapped_column(String(1000), nullable=True)
     created_by:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"),nullable = False)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                 default=lambda: datetime.now(timezone.utc))

@@ -50,6 +50,7 @@ class JobCreate(BaseModel):
     title:str = Field(min_length=8, max_length=20)
     company:str = Field(min_length=8, max_length=30)
     salary:int
+    requirements:str
     location:str = Field(min_length= 8, max_length=100)
     job_type:str
 
@@ -61,8 +62,17 @@ class JobResponse(BaseModel):
     company:str
     salary:int
     status:JobStatus
+    requirements:str| None = None
     location:str
     job_type:str
+    created_at:datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class JobSearchResponse(BaseModel):
+    id:int
+    title:str
+    company:str
     created_at:datetime
 
     model_config = ConfigDict(from_attributes=True)

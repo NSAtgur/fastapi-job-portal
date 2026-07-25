@@ -25,6 +25,14 @@ export interface Job {
   location: string;
   job_type: string;
   status: JobStatus;
+  requirements: string | null;
+  created_at: string;
+}
+
+export interface JobSearchResult {
+  id: number;
+  title: string;
+  company: string;
   created_at: string;
 }
 

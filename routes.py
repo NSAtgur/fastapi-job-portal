@@ -4,7 +4,7 @@ from database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse,ApplicationStatusUpdate,JobsStatusUpdate, JobStatus
+from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse,ApplicationStatusUpdate,JobsStatusUpdate, JobStatus,JobSearchResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
@@ -93,7 +93,7 @@ async def post_job(
         db: AsyncSession = Depends(get_db)
         ):
     try: 
-        new_job = JobsDB(title=job.title, company=job.company, salary=job.salary, location=job.location, job_type=job.job_type, created_by=r.id)
+        new_job = JobsDB(title=job.title, company=job.company, salary=job.salary, location=job.location, job_type=job.job_type, created_by=r.id, requirements = job.requirements)
         db.add(new_job)
         await db.commit()
         await db.refresh(new_job)
@@ -120,7 +120,7 @@ async def post_job(
 
     
 
-@router.get('/jobs', response_model=List[JobResponse])
+@router.get('/jobs', response_model=List[JobSearchResponse])
 async def search_job(
     title: str, 
     p=Depends(pagination), 
@@ -133,9 +133,26 @@ async def search_job(
         return jobs
 
     except Exception:
-        logger.exception("Job job_id=%s not found", title)
+        logger.exception("Failed to fetch - jobs job_title=%s", title)
         raise
 
+@router.get('/jobs/{job_id}', response_model= JobResponse)
+async def get_job_details(
+    job_id:int,
+    db:AsyncSession = Depends(get_db)
+):
+    try:
+        result = await db.execute(select(JobsDB).where(JobsDB.id == job_id))
+        job = result.scalar_one_or_none()
+
+        if not job:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+        return job
+
+    except Exception:
+        logger.exception("Failed to fetch job job_id=%s ", job_id)
+        raise
 
 @router.post('/jobs/{job_id}/apply', response_model=ApplicationResponse)
 async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depends(login_required), db: AsyncSession = Depends(get_db)):
