@@ -135,7 +135,11 @@ class JobsDB(Base):
     salary:Mapped[int] = mapped_column(Integer,nullable=True)
     location:Mapped[str] = mapped_column(String(100),nullable=True)
     job_type:Mapped[str] = mapped_column(String(20),nullable=True)
-    status:Mapped[str] = mapped_column(String(30), default = JobStatus.open.value, nullable= True)
+    status: Mapped[str] = mapped_column(
+                                    String(30),
+                                    default=JobStatus.open.value,
+                                    nullable=False
+                                    )   
     created_by:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"),nullable = False)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                 default=lambda: datetime.now(timezone.utc))
