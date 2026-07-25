@@ -876,7 +876,7 @@ async def recruiter_applications(
 
     except Exception:
         await db.rollback()
-        logger.exception("Failed to fetch recruiter applications for job_id=%s job", job.id)
+        logger.exception("Failed to fetch recruiter applications for job_id=%s job", job_id)
         raise
 
 @router.patch('/users/recruiter/posts/{job_id}', response_model= JobResponse)
