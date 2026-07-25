@@ -50,7 +50,7 @@ class JobCreate(BaseModel):
     title:str = Field(min_length=8, max_length=20)
     company:str = Field(min_length=8, max_length=30)
     salary:int
-    requirements:str
+    requirements:str| None = None
     location:str = Field(min_length= 8, max_length=100)
     job_type:str
 
