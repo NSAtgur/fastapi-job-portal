@@ -170,7 +170,7 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
     if existing_application:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Already applied")
     try:
-        new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id, status="applied")
+        new_application = ApplicationsDB(user_name=user.name,user_id=user.id, job_id=job_id)
 
         logger.info("User %s is applying for %s job ", user.id, job_id)
 
