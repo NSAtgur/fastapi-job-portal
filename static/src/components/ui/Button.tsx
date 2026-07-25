@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
+import { motion } from 'framer-motion';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'outline' | 'ghost' | 'danger';
@@ -29,21 +30,24 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     { variant = 'primary', size = 'md', loading, className = '', children, disabled, ...props },
     ref
   ) => {
+    const isDisabled = disabled || loading;
     return (
-      <button
+      <motion.button
         ref={ref}
-        disabled={disabled || loading}
+        disabled={isDisabled}
+        whileTap={isDisabled ? undefined : { scale: 0.97 }}
+        transition={{ duration: 0.12, ease: 'easeOut' }}
         className={`inline-flex items-center justify-center gap-2 rounded-md font-medium
           tracking-tight transition-colors duration-150 cursor-pointer
           disabled:cursor-not-allowed
           ${variants[variant]} ${sizes[size]} ${className}`}
-        {...props}
+        {...(props as any)}
       >
         {loading ? (
           <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
         ) : null}
         {children}
-      </button>
+      </motion.button>
     );
   }
 );

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Briefcase, Users } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StageTracker } from '@/components/StageTracker';
@@ -18,6 +19,7 @@ export function Landing() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo className="text-lg" />
         <nav className="flex items-center gap-3">
+          <ThemeToggle />
           <Link to="/login">
             <Button variant="ghost" size="sm">Log in</Button>
           </Link>

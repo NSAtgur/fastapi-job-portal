@@ -23,14 +23,14 @@ export function ExperiencePanel() {
   const { data: experiences, isLoading } = useQuery({
     queryKey: ['experience'],
     queryFn: async () => {
-      const { data } = await api.get<Experience[]>('/me/experience');
+      const { data } = await api.get<Experience[]>('/users/me/experience');
       return data ?? [];
     },
   });
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/me/experience', {
+      const { data } = await api.post('/users/me/experience', {
         ...form,
         start_date: new Date(form.start_date).toISOString(),
         end_date: form.currently_working
@@ -55,7 +55,7 @@ export function ExperiencePanel() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => api.delete(`/me/experience/${id}`),
+    mutationFn: async (id: number) => api.delete(`/users/me/experience/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['experience'] }),
   });
 

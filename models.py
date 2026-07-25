@@ -3,7 +3,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 from datetime import datetime,timezone
 from database import Base
-from schemas import ApplicationStatus
+from schemas import ApplicationStatus, JobStatus
 
 
 
@@ -22,12 +22,12 @@ class UsersDB(Base):
 
     id:Mapped[int] = mapped_column(Integer, primary_key=True, index= True)
     name:Mapped[str] = mapped_column(String(15), unique = True, nullable = False)
-    email:Mapped[str] = mapped_column(String(25), unique = True, nullable = False)
+    email:Mapped[str] = mapped_column(String(255), unique = True, nullable = False)
     password:Mapped[str] = mapped_column(String(200), nullable= False)
     role:Mapped[str] = mapped_column(String,nullable= False)
     is_active:Mapped[bool] = mapped_column(Boolean, default= True)
     is_verified:Mapped[bool] = mapped_column(Boolean, default = False, nullable=True)
-    profile_pic:Mapped[str] = mapped_column(String(100), nullable= True)
+    profile_pic:Mapped[str] = mapped_column(String(255), nullable= True)
     experience_years:Mapped[int] = mapped_column(Integer, nullable= True)
     bio:Mapped[str] = mapped_column(String(500), nullable= True)
     headline:Mapped[str] = mapped_column(String(500), nullable= True)
@@ -55,8 +55,8 @@ class Projects(Base):
     user_id:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"), nullable= False, index= True)
     title:Mapped[str] = mapped_column(String(30), nullable= True)
     description:Mapped[str] = mapped_column(String(100), nullable= True)
-    github_link:Mapped[str] = mapped_column(String(30), nullable= True)
-    live_url:Mapped[str] = mapped_column(String(30), nullable= True)
+    github_link:Mapped[str] = mapped_column(String(255), nullable= True)
+    live_url:Mapped[str] = mapped_column(String(255), nullable= True)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                     default=lambda: datetime.now(timezone.utc))
 
@@ -76,11 +76,11 @@ class Experience(Base):
 
     id:Mapped[int] = mapped_column(Integer, primary_key= True, index = True)
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index= True)
-    organization_name:Mapped[str] = mapped_column(String(20), nullable = True)
-    role:Mapped[str] = mapped_column(String(20), nullable = True)
+    organization_name:Mapped[str] = mapped_column(String(100), nullable = True)
+    role:Mapped[str] = mapped_column(String(100), nullable = True)
     start_date:Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable = True)
     end_date:Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable = True)
-    contribution:Mapped[str] = mapped_column(String(100), nullable= True)
+    contribution:Mapped[str] = mapped_column(String(500), nullable= True)
     currently_working:Mapped[bool] = mapped_column(Boolean, default = True)
     skills_used:Mapped[str] = mapped_column(String(100), nullable = True)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
@@ -135,6 +135,7 @@ class JobsDB(Base):
     salary:Mapped[int] = mapped_column(Integer,nullable=True)
     location:Mapped[str] = mapped_column(String(100),nullable=True)
     job_type:Mapped[str] = mapped_column(String(20),nullable=True)
+    status:Mapped[str] = mapped_column(String(30), default = JobStatus.open.value, nullable= True)
     created_by:Mapped[int] = mapped_column(Integer,ForeignKey("users.id"),nullable = False)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                 default=lambda: datetime.now(timezone.utc))
@@ -177,11 +178,11 @@ class Socials(Base):
     
     id:Mapped[int] = mapped_column(Integer, primary_key= True)
     user_id:Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), index = True)
-    github_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    linkedin_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    leetcode_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    codeforces_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
-    portfolio_profile_url:Mapped[str] = mapped_column(String(50),nullable=True)
+    github_profile_url:Mapped[str] = mapped_column(String(255),nullable=True)
+    linkedin_profile_url:Mapped[str] = mapped_column(String(255),nullable=True)
+    leetcode_profile_url:Mapped[str] = mapped_column(String(255),nullable=True)
+    codeforces_profile_url:Mapped[str] = mapped_column(String(255),nullable=True)
+    portfolio_profile_url:Mapped[str] = mapped_column(String(255),nullable=True)
     created_at:Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                     default=lambda: datetime.now(timezone.utc))
 

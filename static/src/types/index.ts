@@ -15,6 +15,8 @@ export interface User {
   created_at: string;
 }
 
+export type JobStatus = 'Open' | 'Closed';
+
 export interface Job {
   id: number;
   title: string;
@@ -22,6 +24,7 @@ export interface Job {
   salary: number;
   location: string;
   job_type: string;
+  status: JobStatus;
   created_at: string;
 }
 

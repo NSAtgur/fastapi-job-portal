@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Briefcase,
   ClipboardList,
   User,
-  Bell,
   LogOut,
   PlusCircle,
   ListChecks,
   Users,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationBell, NotificationCenter } from '@/components/NotificationCenter';
+import { useNotificationSeenStore } from '@/store/notificationSeen';
 import { useAuthStore } from '@/store/auth';
-import { api } from '@/lib/api';
-import type { Notification } from '@/types';
 
 const NAV_BY_ROLE: Record<string, { to: string; label: string; icon: typeof Briefcase }[]> = {
   user: [
@@ -35,19 +35,14 @@ const NAV_BY_ROLE: Record<string, { to: string; label: string; icon: typeof Brie
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuthStore();
   const [notifOpen, setNotifOpen] = useState(false);
-
-  const { data: notifications } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: async () => {
-      const { data } = await api.get<Notification[]>('/profile/notifications');
-      return data;
-    },
-    refetchInterval: 30_000,
-  });
+  const [newestId, setNewestId] = useState<number | null>(null);
+  const lastSeenId = useNotificationSeenStore((s) => s.lastSeenId);
 
   const navItems = NAV_BY_ROLE[user?.role || 'user'];
+  const hasUnread = !!newestId && newestId > lastSeenId;
 
   function handleLogout() {
     logout();
@@ -102,49 +97,32 @@ export function AppLayout() {
           <span className="font-mono text-[11px] uppercase tracking-widest text-paper-faint">
             {user?.role === 'recruiter' ? 'Recruiter workspace' : user?.role === 'admin' ? 'Admin console' : 'Job seeker workspace'}
           </span>
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen((v) => !v)}
-              className="relative rounded-md p-2 text-paper-dim transition-colors hover:bg-graphite-900 hover:text-paper"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-              {!!notifications?.length && (
-                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-amber" />
-              )}
-            </button>
-            {notifOpen && (
-              <div className="absolute right-0 top-11 z-10 w-80 rounded-lg border border-graphite-800 bg-graphite-900 shadow-xl">
-                <div className="border-b border-graphite-800 px-4 py-3">
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-paper-faint">
-                    Notifications
-                  </span>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications?.length ? (
-                    notifications.map((n) => (
-                      <div key={n.id} className="border-b border-graphite-800 px-4 py-3 last:border-0">
-                        <p className="text-[13px] text-paper">{n.message}</p>
-                        <p className="mt-1 font-mono text-[11px] text-paper-faint">
-                          {new Date(n.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="px-4 py-6 text-center text-[13px] text-paper-faint">
-                      Nothing yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <NotificationBell onClick={() => setNotifOpen((v) => !v)} hasUnread={hasUnread} />
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-8">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
+
+      <NotificationCenter
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        onNewestId={setNewestId}
+      />
     </div>
   );
 }

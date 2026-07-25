@@ -26,7 +26,7 @@ function useApplicantData(userId?: string) {
     queryKey: ['applicant-experience', userId],
     queryFn: async () => {
       try {
-        return (await api.get<Experience[]>(`/user/${userId}/experience`)).data;
+        return (await api.get<Experience[]>(`/users/${userId}/experience`)).data;
       } catch {
         return [] as Experience[];
       }
@@ -37,7 +37,7 @@ function useApplicantData(userId?: string) {
     queryKey: ['applicant-projects', userId],
     queryFn: async () => {
       try {
-        return (await api.get<Project[]>(`/user/${userId}/projects`)).data;
+        return (await api.get<Project[]>(`/users/${userId}/projects`)).data;
       } catch {
         return [] as Project[];
       }
@@ -48,7 +48,7 @@ function useApplicantData(userId?: string) {
     queryKey: ['applicant-skills', userId],
     queryFn: async () => {
       try {
-        return (await api.get<Skill[]>(`/user/${userId}/skills`)).data;
+        return (await api.get<Skill[]>(`/users/${userId}/skills`)).data;
       } catch {
         return [] as Skill[];
       }
@@ -59,7 +59,7 @@ function useApplicantData(userId?: string) {
     queryKey: ['applicant-socials', userId],
     queryFn: async () => {
       try {
-        const data = (await api.get<Socials[]>(`/user/${userId}/socials`)).data;
+        const data = (await api.get<Socials[]>(`/users/${userId}/socials`)).data;
         return data[0] ?? null;
       } catch {
         return null;

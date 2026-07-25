@@ -21,7 +21,7 @@ export function PostJob() {
 
   const postMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/job', {
+      const { data } = await api.post('/jobs', {
         title: form.title,
         company: form.company,
         salary: Number(form.salary),

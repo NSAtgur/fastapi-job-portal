@@ -18,14 +18,12 @@ export function AdminUsers() {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: async (userId: number) =>
-      api.patch('/admin/user/deactivate', null, { params: { user_id: userId } }),
+    mutationFn: async (userId: number) => api.patch(`/admin/users/${userId}/deactivate`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
   });
 
   const activateMutation = useMutation({
-    mutationFn: async (userId: number) =>
-      api.patch('/admin/user/activate', null, { params: { user_id: userId } }),
+    mutationFn: async (userId: number) => api.patch(`/admin/users/${userId}/activate`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
   });
 

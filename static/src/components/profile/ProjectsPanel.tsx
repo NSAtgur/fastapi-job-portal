@@ -16,7 +16,7 @@ export function ProjectsPanel() {
     queryKey: ['projects'],
     queryFn: async () => {
       try {
-        const { data } = await api.get<Project[]>('/me/projects');
+        const { data } = await api.get<Project[]>('/users/me/projects');
         return data;
       } catch {
         return [] as Project[];
@@ -26,7 +26,7 @@ export function ProjectsPanel() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/me/projects', {
+      const { data } = await api.post('/users/me/projects', {
         title: form.title,
         description: form.description,
         github_link: form.github_link,
@@ -42,7 +42,7 @@ export function ProjectsPanel() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => api.delete(`/me/projects/${id}`),
+    mutationFn: async (id: number) => api.delete(`/users/me/projects/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
   });
 

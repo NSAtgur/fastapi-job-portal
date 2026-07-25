@@ -15,7 +15,7 @@ export function SkillsPanel() {
     queryKey: ['skills'],
     queryFn: async () => {
       try {
-        const { data } = await api.get<Skill[]>('/me/skills');
+        const { data } = await api.get<Skill[]>('/users/me/skills');
         return data;
       } catch {
         return [] as Skill[];
@@ -25,7 +25,7 @@ export function SkillsPanel() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/me/skills', { skill_name: skillName });
+      const { data } = await api.post('/users/me/skills', { skill_name: skillName });
       return data;
     },
     onSuccess: () => {

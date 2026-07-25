@@ -11,9 +11,15 @@ class ApplicationStatus(str, Enum):
     accepted = "Accepted"
     rejected = "Rejected"
 
+class JobStatus(str, Enum):
+    open = "Open"
+    closed = "Closed"
+    
 class ApplicationStatusUpdate(BaseModel):
     status:ApplicationStatus
 
+class JobsStatusUpdate(BaseModel):
+    status: JobStatus
 class CreateUser(BaseModel):
     name:str = Field(min_length=8, max_length=15)
     email:EmailStr
@@ -54,6 +60,7 @@ class JobResponse(BaseModel):
     title:str
     company:str
     salary:int
+    status:JobStatus
     location:str
     job_type:str
     created_at:datetime

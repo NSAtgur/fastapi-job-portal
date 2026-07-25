@@ -36,7 +36,7 @@ export function ProfileHeader() {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.patch('/me/profile', {
+      const { data } = await api.patch('/users/me', {
         name: form.name,
         headline: form.headline,
         bio: form.bio,

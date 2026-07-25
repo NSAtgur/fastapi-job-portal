@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Logo } from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
@@ -34,7 +35,7 @@ export function Login() {
     onSuccess: async (data) => {
       setAuth(data.access_token);
       try {
-        const { data: profile } = await api.get('/users/me/profile');
+        const { data: profile } = await api.get('/users/me');
         useAuthStore.getState().setUser(profile);
         navigate(profile.role === 'recruiter' ? '/recruiter' : profile.role === 'admin' ? '/admin' : '/dashboard/jobs');
       } catch {
@@ -60,9 +61,12 @@ export function Login() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-sm"
       >
-        <Link to="/" className="mb-8 block w-fit">
-          <Logo className="text-base" />
-        </Link>
+        <div className="mb-8 flex items-center justify-between">
+          <Link to="/">
+            <Logo className="text-base" />
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <h1 className="font-display text-2xl font-bold tracking-tight text-paper">
           Welcome back

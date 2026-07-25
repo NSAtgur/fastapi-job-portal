@@ -4,7 +4,7 @@ from database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from tokens import create_access_token, verify_token
 from security import verify_password_hash, generate_password_hash
-from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse,ApplicationStatusUpdate
+from schemas import CreateUser, UserResponse, JobCreate, JobResponse, ApplicationResponse, NotificationResponse, UploadResponse, ProfileUpdate, ProjectsCreate, UpdateProjects, ProjectResponse, ExperienceCreate, UpdateExperience, ExperienceResponse, SkillsCreate, UpdateSocials, SkillResponse, SocialsResponse,ApplicationStatusUpdate,JobsStatusUpdate, JobStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth import login_required, admin_required, recruiter_required, pagination
 from typing import List
@@ -85,7 +85,7 @@ async def login_user(
     }
 
 
-@router.post('/job', response_model=JobResponse)
+@router.post('/jobs', response_model=JobResponse)
 async def post_job(
         job: JobCreate,
         background_tasks: BackgroundTasks, 
@@ -107,20 +107,20 @@ async def post_job(
             "job_id": new_job.id
         })
         
-        logger.info("User %s posted new job", r.name, new_job.title)
+        logger.info("User user_id=%s posted new job", r.name, new_job.title)
 
 
         return new_job
 
     except Exception:
         await db.rollback()
-        logger.exception("DB failed to add %s job", job.title)
+        logger.exception("DB failed to add job_title=%s job posted by recruiter_id=%s recruiter", job.title, r.id)
         raise
 
 
     
 
-@router.get('/search', response_model=List[JobResponse])
+@router.get('/jobs', response_model=List[JobResponse])
 async def search_job(
     title: str, 
     p=Depends(pagination), 
@@ -133,17 +133,20 @@ async def search_job(
         return jobs
 
     except Exception:
-        logger.exception("Job %s not found", title)
+        logger.exception("Job job_id=%s not found", title)
         raise
 
 
-@router.post('/apply/{job_id}', response_model=ApplicationResponse)
+@router.post('/jobs/{job_id}/apply', response_model=ApplicationResponse)
 async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = Depends(login_required), db: AsyncSession = Depends(get_db)):
     job_result = await db.execute(select(JobsDB).where(JobsDB.id == job_id))
     job = job_result.scalar_one_or_none()
 
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    if job.status == JobStatus.closed.value:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Job is not accepting applications")
 
     application_result = await db.execute(select(ApplicationsDB).where(ApplicationsDB.user_id == user.id, ApplicationsDB.job_id == job_id))
     existing_application = application_result.scalar_one_or_none()
@@ -171,11 +174,11 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
 
     except Exception:
         await db.rollback()
-        logger.exception("DB failed to insert new application")
+        logger.exception("DB failed to insert new application for job_id=%s job by user_id=%s user", job_id, user.id )
         raise
 
 
-@router.patch('/me/profile', response_model = UserResponse)
+@router.patch('/users/me', response_model = UserResponse)
 async def update_profile(
     profile:ProfileUpdate,
     user:UsersDB = Depends(login_required),
@@ -198,20 +201,16 @@ async def update_profile(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to fetch the profile of user_id=%s user", user.id)
         raise
 
-
-
-
-
-@router.get('/users/me/profile', response_model=UserResponse)
+@router.get('/users/me', response_model=UserResponse)
 async def user_profile(user: UsersDB = Depends(login_required)):
     return user
 
 # Routes for user experience(GET,POST,PUT,DELETE)
 
-@router.post('/me/experience', response_model= ExperienceResponse)
+@router.post('/users/me/experience', response_model= ExperienceResponse)
 async def add_experience(
     experience:ExperienceCreate,
     user: UsersDB = Depends(login_required),
@@ -239,7 +238,7 @@ async def add_experience(
         logger.info("Commited experience details for %s user", user.id)
         
         await db.refresh(new_experience)
-        logger.info("New experience added")
+        logger.info("New experience added by user user_id=%s ", user.id)
 
         return ExperienceResponse(
             id=new_experience.id,
@@ -255,11 +254,11 @@ async def add_experience(
     
     except Exception:
         await db.rollback()
-        logger.exception("Unable to add experience")
+        logger.exception("Unable to add experience for user_id=%s user", user.id)
         raise
 
 
-@router.put('/me/experience/{experience_id}', response_model= ExperienceResponse)
+@router.put('/users/me/experience/{experience_id}', response_model= ExperienceResponse)
 async def update_experience( 
                             experience_id:int, 
                             experience:UpdateExperience, 
@@ -277,7 +276,7 @@ async def update_experience(
                     detail="Experience not found"
                 )
         
-        logger.info("Updating %s experience of user %s", experience_id, user.id)
+        logger.info("Updating %s experience of user user_id=%s", experience_id, user.id)
 
         updates = experience.model_dump(exclude_unset=True)
 
@@ -287,11 +286,11 @@ async def update_experience(
         
         await db.commit()
         
-        logger.info("Successfully commited changes for %s user ", user.id)
+        logger.info("Successfully commited changes for user_id=%s user ", user.id)
 
         await db.refresh(user_exp)
 
-        logger.info("Updated experience")
+        logger.info("Updated experience for %s user", user.id)
 
         return ExperienceResponse(
             id=user_exp.id,
@@ -306,11 +305,11 @@ async def update_experience(
         )
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to update the experience for user_id%s user", user.id)
         raise
         
 
-@router.get('/me/experience', response_model= List[ExperienceResponse])
+@router.get('/users/me/experience', response_model= List[ExperienceResponse])
 async def get_experience(
     user:UsersDB = Depends(login_required), 
     db: AsyncSession = Depends(get_db)
@@ -340,11 +339,11 @@ async def get_experience(
     
     except Exception:
         await db.rollback()
-        logger.exception("Experience for %s user not found", user.id)
+        logger.exception("Experience for user_id=%s user not found", user.id)
         raise
         
     
-@router.delete('/me/experience/{experience_id}')
+@router.delete('/users/me/experience/{experience_id}')
 async def delete_experience(
     experience_id:int,
     user: UsersDB = Depends(login_required),
@@ -357,25 +356,25 @@ async def delete_experience(
         if not user_exp:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail = "user experience not found")
         
-        logger.info("Deleting %s experience of %s user ", experience_id, user.id)
+        logger.info("Deleting experience_id=%s experience of user_id%s user ", experience_id, user.id)
 
         await db.delete(user_exp)
 
-        logger.info("Commiting the changes after deleting % experience", experience_id)
+        logger.info("Commiting the changes after deleting experience_id=%s experience", experience_id)
 
         await db.commit()
-        logger.info("successfully commited the changees and deleted the %s experience", experience_id)
+        logger.info("successfully commited the changees and deleted the experience_id=%s experience", experience_id)
 
         return Response(status_code= status.HTTP_204_NO_CONTENT)
     
     except Exception:
         await db.rollback()
-        logger.exception("Unable to delete experience")
+        logger.exception("Unable to delete experience experience_id=%s for user_id=%s user", experience_id, user.id)
         raise
 
 
 #Routes for projects of users(GET,POST,PUT,DELETE)
-@router.get('/me/projects', response_model = List[ ProjectResponse])
+@router.get('/users/me/projects', response_model = List[ ProjectResponse])
 async def get_projects(user:UsersDB = Depends(login_required),p = Depends(pagination), db:AsyncSession = Depends(get_db)):
     skip,limit = p
     try:
@@ -398,11 +397,11 @@ async def get_projects(user:UsersDB = Depends(login_required),p = Depends(pagina
             for project in projects
         ]
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to load the projects of user_id=%s user", user.id)
         raise
 
 
-@router.post('/me/projects', response_model=ProjectResponse)
+@router.post('/users/me/projects', response_model=ProjectResponse)
 async def add_project(
     project: ProjectsCreate, 
     user:UsersDB = Depends(login_required), 
@@ -417,7 +416,7 @@ async def add_project(
             live_url = str(project.live_url)
         )
         
-        logger.info("Adding a new project for % user", user.id)
+        logger.info("Adding a new project for user_id=%s user", user.id)
         db.add(new_project)
 
         logger.info("Commiting the changes")
@@ -438,11 +437,11 @@ async def add_project(
         )
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to add new project of user_id=%s user", user.id)
         raise
 
 
-@router.put('/me/projects/{project_id}', response_model=ProjectResponse)
+@router.put('/users/me/projects/{project_id}', response_model=ProjectResponse)
 async def update_project(
     project_id:int, 
     project:UpdateProjects, 
@@ -464,7 +463,7 @@ async def update_project(
         await db.commit()
         await db.refresh(user_project)
 
-        logger.info("Updated % user project %s", user.id, project_id)
+        logger.info("Updated %s user project %s", user.id, project_id)
         return ProjectResponse(
             id=user_project.id,
             title=user_project.title,
@@ -476,11 +475,11 @@ async def update_project(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to update project_id=%s of user_id=%s", project_id, user.id)
         raise
 
 
-@router.delete('/me/projects/{project_id}')
+@router.delete('/users/me/projects/{project_id}')
 async def delete_project(
     project_id:int,
     user:UsersDB = Depends(login_required),
@@ -502,13 +501,13 @@ async def delete_project(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to add new project for user_id=%s user", user.id)
         raise
 
 
 
 #Routes for skills GET, POST
-@router.get('/me/skills', response_model= List[SkillResponse])
+@router.get('/users/me/skills', response_model= List[SkillResponse])
 async def get_skills(
     user:UsersDB = Depends(login_required), 
     db:AsyncSession = Depends(get_db)
@@ -533,11 +532,11 @@ async def get_skills(
         ]
     
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to load skills for user_id=%s user",user.id)
         raise
 
 
-@router.post('/me/skills', response_model= SkillResponse)
+@router.post('/users/me/skills', response_model= SkillResponse)
 async def add_skills(
     skills: SkillsCreate, 
     user:UsersDB = Depends(login_required),
@@ -564,12 +563,15 @@ async def add_skills(
                 detail="Skill already added"
             )
         
+        logger.info("Adding the skills for user_id=%s user", user.id)
+        
         skill = UserSkills(skill_id = user_skill.id, user_id = user.id)
         db.add(skill)        
-
+        
+        logger.info("Commiting the insert")
         await db.commit()
 
-        logger.info("Added skill for %s user", user.id)
+        logger.info("Added skill_id=%s skill for %s user", user.id,skill.skill_id)
         
         return SkillResponse(
             id=skill.skill_id,
@@ -579,12 +581,12 @@ async def add_skills(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to add new skills for user_id=%s user", user.id)
         raise
 
 
 # Routes for adding social platform profile links (GET, POST, DELETE)
-@router.get('/me/socials', response_model=List[SocialsResponse])
+@router.get('/users/me/socials', response_model=List[SocialsResponse])
 async def get_socials(
     user:UsersDB = Depends(login_required),
     db:AsyncSession = Depends(get_db)
@@ -603,11 +605,11 @@ async def get_socials(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to load socials for user_id=%s user", user.id)
         raise
 
 
-@router.patch("/me/socials", response_model=SocialsResponse)
+@router.patch("/users/me/socials", response_model=SocialsResponse)
 async def update_socials(
     socials: UpdateSocials,
     user: UsersDB = Depends(login_required),
@@ -629,6 +631,8 @@ async def update_socials(
             if value is not None:
                 setattr(existing_socials, field, str(value))
 
+        logger.info("Commiting the update")
+
         await db.commit()
         await db.refresh(existing_socials)
 
@@ -646,11 +650,11 @@ async def update_socials(
 
     except Exception:
         await db.rollback()
-        logger.exception("Unable to update socials for user %s", user.id)
+        logger.exception("Unable to update socials for user user_id=%s", user.id)
         raise
 
 
-@router.delete('/me/socials/{social_id}')
+@router.delete('/users/me/socials/{social_id}')
 async def delete_socials(
     social_id:int,
     user:UsersDB = Depends(login_required),
@@ -674,9 +678,11 @@ async def delete_socials(
 
     except Exception:
         await db.rollback()
-        logger.exception("DB error")        
+        logger.exception("DB failed to delete the social link of the user user_id=%s", user.id)        
         raise
 
+
+# Routes for recruiter to view applicant profile
 
 @router.get('/users/{user_id}', response_model= UserResponse )
 async def get_user_profile(
@@ -693,15 +699,16 @@ async def get_user_profile(
                 detail = "User not found"
             )
         
+        logger.info("got user profile")
         return user
     
     except Exception:
 
-        logger.exception("DB error")
-        raise
+        logger.exception("DB failed to fetch the profile of user_id=%s user", user_id)
+        raise 
 
 
-@router.get('/user/{user_id}/experience', response_model = List[ExperienceResponse])
+@router.get('/users/{user_id}/experience', response_model = List[ExperienceResponse])
 async def get_user_experience(
     user_id:int,
     db:AsyncSession = Depends(get_db)
@@ -719,11 +726,11 @@ async def get_user_experience(
         return user_experience
     
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to get the experience of user_id=%s user", user_id)
         raise
 
 
-@router.get('/user/{user_id}/skills', response_model= List[SkillResponse])
+@router.get('/users/{user_id}/skills', response_model= List[SkillResponse])
 async def get_user_skills(
     user_id:int,
     db:AsyncSession = Depends(get_db)
@@ -746,11 +753,11 @@ async def get_user_skills(
         ]
     
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to fetch the skills of user_id=%s user", user_id)
         raise
 
 
-@router.get('/user/{user_id}/projects', response_model = List[ProjectResponse])
+@router.get('/users/{user_id}/projects', response_model = List[ProjectResponse])
 async def get_user_projects(
     user_id:int,
     db:AsyncSession = Depends(get_db)
@@ -768,11 +775,11 @@ async def get_user_projects(
         return user_projects
     
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to fetch the projects of user_id=%s user", user_id)
         raise    
 
 
-@router.get('/user/{user_id}/socials', response_model = List[SocialsResponse])
+@router.get('/users/{user_id}/socials', response_model = List[SocialsResponse])
 async def get_user_socials(
     user_id:int,
     db:AsyncSession = Depends(get_db)
@@ -790,7 +797,7 @@ async def get_user_socials(
         return user_socials
     
     except Exception:
-        logger.exception("DB error")
+        logger.exception("DB failed to fetch user socials of user_id=%s user", user_id)
         raise
 
 
@@ -813,9 +820,10 @@ async def user_applications(
 
     except Exception:
         await db.rollback()
-        logger.exception("Failed to fetch the application")
+        logger.exception("Failed to fetch the applications of user_id=%s user", user.id)
         raise 
 
+#Route for recruiter to view applications 
 
 @router.get('/users/recruiter/posts/{job_id}/applications', response_model=List[ApplicationResponse])
 async def recruiter_applications(
@@ -851,18 +859,48 @@ async def recruiter_applications(
 
     except Exception:
         await db.rollback()
-        logger.exception("Failed to fetch recruiter applications")
+        logger.exception("Failed to fetch recruiter applications for job_id=%s job", job.id)
         raise
 
+@router.patch('/users/recruiter/posts/{job_id}', response_model= JobResponse)
+async def update_job_status( 
+    data:JobsStatusUpdate,
+    job_id:int,
+    background_tasks:BackgroundTasks,
+    recruiter:UsersDB = Depends(recruiter_required),
+    db:AsyncSession = Depends(get_db)
+):
 
-@router.get('/users/recruiter/profile', response_model=UserResponse)
-async def recruiter_profile(recruiter: UsersDB = Depends(recruiter_required)):
-    return recruiter
+    try:
+        result = await db.execute(select(JobsDB).where(JobsDB.id == job_id, JobsDB.created_by == recruiter.id))
+        job = result.scalar_one_or_none()
 
+        if not job:
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, 
+                                detail=" job not found")
 
-@router.get('/users/admin/profile', response_model=UserResponse)
-async def admin_profile(user: UsersDB = Depends(admin_required)):
-    return user
+        job.status = data.status
+
+        logger.info("Recruiter user_id=%s updated the status of job_id=%s job", recruiter.id, job_id)
+
+        await db.commit()
+        await db.refresh(job)
+
+        logger.info("Successfully commited and updated job_id=%s job status by recruiter_id=%s recruiter", job_id, recruiter.id)
+        background_tasks.add_task(process_notification, {
+            "type": "job status updated",
+            "receiver_id": recruiter.id,
+            "job_title": job.title,
+            "company": job.company,
+            "status": job.status,
+        }
+        )
+
+        return job
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to update status of job job_id=%s", job_id)
+        raise
 
 
 @router.get('/users/recruiter/posts', response_model=List[JobResponse])
@@ -874,7 +912,7 @@ async def recruiter_posts(recruiter: UsersDB = Depends(recruiter_required), p=De
         return posts
 
     except Exception:
-        logger.exception()
+        logger.exception("DB failed to fetch the posts of recruiter recruiter_id=%s", recruiter.id)
         raise
 
 
@@ -905,7 +943,7 @@ async def delete_jobposts(job_id: int, background_tasks: BackgroundTasks, recrui
 
     except Exception:
         await db.rollback()
-        logger.exception("Failed to delete %s job", job_id)
+        logger.exception("Failed to delete job_id=%s job", job_id)
 
 
 
@@ -918,7 +956,7 @@ async def get_users(admin: UsersDB = Depends(admin_required), p=Depends(paginati
     return users
 
 
-@router.patch('/admin/user/deactivate', response_model=UserResponse)
+@router.patch('/admin/users/{user_id}/deactivate', response_model=UserResponse)
 async def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
     existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
     user = existing_user.scalar_one_or_none()
@@ -937,14 +975,14 @@ async def deactivate_user(user_id: int, background_tasks: BackgroundTasks, admin
 
     
     except Exception:
-        logger.exception("Failed to deactivate %s user", user.name)
+        logger.exception("Failed to deactivate user_id=%s user", user.name)
         raise
 
 
     
 
 
-@router.patch('/admin/user/activate', response_model=UserResponse)
+@router.patch('/admin/users/{user_id}/activate', response_model=UserResponse)
 async def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
     existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
     user = existing_user.scalar_one_or_none()
@@ -968,41 +1006,19 @@ async def activate_user(user_id: int, background_tasks: BackgroundTasks, admin: 
     
     except Exception:
         await db.rollback()
-        logger.exception("Failed to activate %s user", user.name)
+        logger.exception("Failed to activate user_id=%s user", user.name)
         raise
     
 
 
 
 
-@router.get('/admin/user', response_model=UserResponse)
-async def get_user(user_id: int, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
-    existing_user = await db.execute(select(UsersDB).where(UsersDB.id == user_id))
-    user= existing_user.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
-
-    return user
-
-
-@router.get('/admin/promote-admin', response_model=UserResponse)
-async def promote_user(user_id: int, admin: UsersDB = Depends(admin_required), db: AsyncSession = Depends(get_db)):
-    existing_user =await db.execute(select(UsersDB).where(UsersDB.id == user_id))
-    user = existing_user.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    return user
-
-
-@router.get('/profile/notifications', response_model=List[NotificationResponse])
+@router.get('/users/me/notifications', response_model=List[NotificationResponse])
 async def notifications(user=Depends(login_required), p=Depends(pagination), db: AsyncSession = Depends(get_db)):
     skip, limit = p
     results = await db.execute(select(NotificationsDB).where(NotificationsDB.user_id == user.id).order_by(NotificationsDB.id.desc()).offset(skip).limit(limit))
     notifications = results.scalars().all()
-    logger.info("Notifications found")
+    logger.info("Notifications found for user_id=%s user", user.id)
     return notifications
 
 
@@ -1064,7 +1080,7 @@ async def update_application_status(
         logger.info("Entered status for %s application", application_id)
         await db.commit()
         await db.refresh(existing_application)
-        logger.info("Updated status for application %s", application_id)
+        logger.info("Updated status for application application_id=%s", application_id)
 
         background_tasks.add_task(process_notification, {
             "type": "application status updated",
@@ -1078,7 +1094,7 @@ async def update_application_status(
     
     except Exception:
         await db.rollback()
-        logger.exception("DB error")
+        logger.exception("DB failed to update status of application_id=%s application", application_id)
         raise
 
 
@@ -1116,7 +1132,7 @@ async def upload_pic(file: UploadFile = File(...), user=Depends(login_required),
 
     except Exception:
         await db.rollback()
-        logger.exception("DB failed")
+        logger.exception("DB failed to upload the profile pic of user_id=%s user", user.id)
         raise
 
 

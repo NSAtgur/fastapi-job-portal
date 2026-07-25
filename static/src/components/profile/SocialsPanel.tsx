@@ -21,7 +21,7 @@ export function SocialsPanel() {
     queryKey: ['socials'],
     queryFn: async () => {
       try {
-        const { data } = await api.get<Socials[]>('/me/socials');
+        const { data } = await api.get<Socials[]>('/users/me/socials');
         return data[0] ?? null;
       } catch {
         return null;
@@ -47,7 +47,7 @@ export function SocialsPanel() {
       const payload = Object.fromEntries(
         Object.entries(form).filter(([, v]) => v.trim() !== '')
       );
-      const { data } = await api.patch('/me/socials', payload);
+      const { data } = await api.patch('/users/me/socials', payload);
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['socials'] }),

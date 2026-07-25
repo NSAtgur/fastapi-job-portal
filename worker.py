@@ -18,7 +18,8 @@ async def process_notification(data: dict):
                 "job posted": "{company} is hiring for {job}",
                 "activated": "Your account has been activated",
                 "deactivated": "Your account has been deactivated",
-                "application status updated":"Your application for {job} at {company} is {status} "
+                "application status updated":"Your application for {job} at {company} is {status} ",
+                "job status updated":"Job status for {job} at {company} is {status}"
                 }
 
             template = templates.get(data["type"])
@@ -70,7 +71,13 @@ async def process_notification(data: dict):
                     company = data["company"],
                     status = data["status"]
                 )
-
+            elif data["type"] == "job status updated":
+                            message = template.format(
+                                job = data["job_title"],
+                                company = data["company"],
+                                status = data["status"]
+                            )
+            
             receiver_ids = data["receiver_id"]
 
         # save to DB
