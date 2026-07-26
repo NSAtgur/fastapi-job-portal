@@ -1138,8 +1138,16 @@ async def update_application_status(
             "status": existing_application.status
         }
         )
-        return existing_application
-    
+        return ApplicationResponse(
+                        id=existing_application.id,
+                        user_name=existing_application.user_name,
+                        user_id=existing_application.user_id,
+                        job_id=existing_application.job_id,
+                        status=existing_application.status,
+                        applied_at=existing_application.applied_at,
+                        job_title=existing_application.job.title,
+                        company=existing_application.job.company,
+                    )
     except Exception:
         await db.rollback()
         logger.exception("DB failed to update status of application_id=%s application", application_id)
