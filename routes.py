@@ -187,7 +187,16 @@ async def apply(job_id: int, background_tasks: BackgroundTasks, user: UsersDB = 
             "user_id": user.id,
             "job_id": job_id
         })
-        return new_application
+        return ApplicationResponse(
+                    id=new_application.id,
+                    user_name=new_application.user_name,
+                    user_id=new_application.user_id,
+                    job_id=new_application.job_id,
+                    status=new_application.status,
+                    applied_at=new_application.applied_at,
+                    job_title=job.title,
+                    company=job.company,
+                ) 
 
     except Exception:
         await db.rollback()
