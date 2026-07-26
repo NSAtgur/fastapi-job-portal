@@ -891,7 +891,19 @@ async def recruiter_applications(
         if not applications:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-        return applications
+        return [
+            ApplicationResponse(
+            id=application.id,
+            user_name=application.user_name,
+            user_id=application.user_id,
+            job_id=application.job_id,
+            job_title=job.title,
+            company = job.company,
+            status=application.status,
+            applied_at=application.applied_at,
+    )
+    for application in applications
+]
 
     except Exception:
         await db.rollback()
