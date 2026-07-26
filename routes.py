@@ -827,17 +827,35 @@ async def user_applications(
     skip, limit = p
 
     try:
-        result = await db.execute(select(ApplicationsDB).where(ApplicationsDB.user_id == user.id).offset(skip).limit(limit))
+        result = await db.execute(
+                    select(ApplicationsDB)
+                    .options(selectinload(ApplicationsDB.job))
+                    .where(ApplicationsDB.user_id == user.id)
+                )
+
         applications = result.scalars().all()
+        user_id = user.id
 
         if not applications:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND)
         
-        return applications
+        return  [
+                    ApplicationResponse
+                    (
+                        id=application.id,
+                        user_name = user.name,
+                        user_id = user.id,
+                        job_id = application.job_id,
+                        job_title=application.job.title,
+                        status = application.status,
+                        applied_at = application.applied_at
+                    )
+                    for application in applications
+                ]
 
     except Exception:
         await db.rollback()
-        logger.exception("Failed to fetch the applications of user_id=%s user", user.id)
+        logger.exception("Failed to fetch the applications of user_id=%s user", user_id)
         raise 
 
 #Route for recruiter to view applications 

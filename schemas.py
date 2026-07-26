@@ -89,6 +89,7 @@ class ApplicationResponse(BaseModel):
     user_name:str | None = None
     user_id:int
     job_id:int
+    job_title:str
     status:ApplicationStatus
     applied_at:datetime
     
