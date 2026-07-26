@@ -90,6 +90,7 @@ class ApplicationResponse(BaseModel):
     user_id:int
     job_id:int
     job_title:str
+    company:str
     status:ApplicationStatus
     applied_at:datetime
     

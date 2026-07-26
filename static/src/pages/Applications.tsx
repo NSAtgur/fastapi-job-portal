@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowUpRight } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { StageTracker } from '@/components/StageTracker';
 import { api } from '@/lib/api';
@@ -36,12 +38,21 @@ export function Applications() {
         {applications?.map((app) => (
           <Card key={app.id} className="p-6">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[15px] font-semibold text-paper">Job #{app.job_id}</p>
-                <p className="mt-0.5 font-mono text-[11px] text-paper-faint">
-                  Applied {new Date(app.applied_at).toLocaleDateString()}
-                </p>
-              </div>
+              <Link
+                to={`/dashboard/jobs/${app.job_id}`}
+                className="group flex items-center gap-1.5"
+              >
+                <div>
+                  <p className="text-[15px] font-semibold text-paper transition-colors group-hover:text-amber">
+                    {app.job_title}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-paper-dim">{app.company}</p>
+                </div>
+                <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-paper-faint transition-colors group-hover:text-amber" />
+              </Link>
+              <p className="mt-0.5 flex-shrink-0 font-mono text-[11px] text-paper-faint">
+                Applied {new Date(app.applied_at).toLocaleDateString()}
+              </p>
             </div>
             <div className="mt-6">
               <StageTracker status={app.status} />

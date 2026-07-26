@@ -848,7 +848,8 @@ async def user_applications(
                         job_id = application.job_id,
                         job_title=application.job.title,
                         status = application.status,
-                        applied_at = application.applied_at
+                        applied_at = application.applied_at,
+                        company = application.job.company
                     )
                     for application in applications
                 ]

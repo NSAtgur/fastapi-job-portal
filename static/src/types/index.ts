@@ -48,6 +48,8 @@ export interface Application {
   user_name: string | null;
   user_id: number;
   job_id: number;
+  job_title: string;
+  company: string;
   status: ApplicationStatus;
   applied_at: string;
 }
